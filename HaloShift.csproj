@@ -16,12 +16,8 @@
 
   <ItemGroup>
     <EmbeddedResource Include="AppIcon.ico" />
-    <None Update="sound_activate.wav">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="sound_deactivate.wav">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <EmbeddedResource Include="sound_activate.wav" />
+    <EmbeddedResource Include="sound_deactivate.wav" />
   </ItemGroup>
 
 </Project>

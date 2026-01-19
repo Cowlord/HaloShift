@@ -117,7 +117,7 @@ namespace HaloShift
 
             // Create context menu
             var contextMenu = new ContextMenuStrip();
-            contextMenu.Items.Add("Show", null, (s, e) => ShowWindow(this.Handle, SW_RESTORE));
+            contextMenu.Items.Add("Show Controls", null, (s, e) => ShowControlsWindow());
             contextMenu.Items.Add("Toggle Mode", null, (s, e) => _modeManager.SwitchMode());
             contextMenu.Items.Add("-");
             contextMenu.Items.Add("Exit", null, (s, e) => this.Close());
@@ -197,21 +197,37 @@ namespace HaloShift
         {
             try
             {
-                var basePath = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+                var assembly = System.Reflection.Assembly.GetExecutingAssembly();
 
-                var activatePath = System.IO.Path.Combine(basePath, "sound_activate.wav");
-                if (System.IO.File.Exists(activatePath))
+                // Load activation sound from embedded resource
+                var activateStream = assembly.GetManifestResourceStream("HaloShift.sound_activate.wav");
+                if (activateStream != null)
                 {
+                    var tempActivate = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "haloshift_activate.wav");
+                    using (var fileStream = System.IO.File.Create(tempActivate))
+                    {
+                        activateStream.CopyTo(fileStream);
+                    }
+                    activateStream.Dispose();
+
                     _activateSound = new MediaPlayer();
-                    _activateSound.Open(new Uri(activatePath));
+                    _activateSound.Open(new Uri(tempActivate));
                     _activateSound.Volume = 0.7;
                 }
 
-                var deactivatePath = System.IO.Path.Combine(basePath, "sound_deactivate.wav");
-                if (System.IO.File.Exists(deactivatePath))
+                // Load deactivation sound from embedded resource
+                var deactivateStream = assembly.GetManifestResourceStream("HaloShift.sound_deactivate.wav");
+                if (deactivateStream != null)
                 {
+                    var tempDeactivate = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "haloshift_deactivate.wav");
+                    using (var fileStream = System.IO.File.Create(tempDeactivate))
+                    {
+                        deactivateStream.CopyTo(fileStream);
+                    }
+                    deactivateStream.Dispose();
+
                     _deactivateSound = new MediaPlayer();
-                    _deactivateSound.Open(new Uri(deactivatePath));
+                    _deactivateSound.Open(new Uri(tempDeactivate));
                     _deactivateSound.Volume = 0.7;
                 }
             }
@@ -252,6 +268,12 @@ namespace HaloShift
             _modeManager = null;
 
             base.OnFormClosing(e);
+        }
+
+        private void ShowControlsWindow()
+        {
+            var controlsWindow = new ControlsWindow();
+            controlsWindow.ShowDialog();
         }
 
         protected override void OnResize(EventArgs e)
