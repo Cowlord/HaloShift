@@ -166,13 +166,14 @@ namespace HaloShift
                 // Play activation sound
                 PlayActivationSound();
 
-                // Bring window to foreground
+                // Show and bring window to foreground
+                this.Visible = true;
+                this.WindowState = FormWindowState.Normal;
                 if (IsIconic(this.Handle))
                 {
                     ShowWindow(this.Handle, SW_RESTORE);
                 }
                 SetForegroundWindow(this.Handle);
-                this.WindowState = FormWindowState.Normal;
                 _notifyIcon.Text = "HaloShift - Mouse Mode";
             }
             else
@@ -180,7 +181,8 @@ namespace HaloShift
                 // Play deactivation sound
                 PlayDeactivationSound();
 
-                // Minimize window
+                // Completely hide the window
+                this.Visible = false;
                 this.WindowState = FormWindowState.Minimized;
                 this.Location = new System.Drawing.Point(-10000, -10000);
                 _notifyIcon.Text = "HaloShift - Controller Mode";
