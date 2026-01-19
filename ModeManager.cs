@@ -23,6 +23,17 @@ namespace HaloShift
         private bool _altF4ComboWasPressed = false;
         private bool _ctrlWComboWasPressed = false;
         private bool _bButtonWasPressed = false;
+        private bool _middleClickComboWasPressed = false;
+        private bool _dpadUpWasPressed = false;
+        private bool _dpadDownWasPressed = false;
+
+        // Sensitivity settings
+        private float _mouseSensitivity = 1.0f;
+        private const float MIN_SENSITIVITY = 0.5f;
+        private const float MAX_SENSITIVITY = 3.0f;
+        private const float SENSITIVITY_STEP = 0.1f;
+
+        public float MouseSensitivity => _mouseSensitivity;
 
         public void Update(Gamepad gamepad)
         {
@@ -57,6 +68,9 @@ namespace HaloShift
             // Left Stick → move mouse
             HandleLeftStickMovement(gamepad);
 
+            // Right Stick → scroll wheel
+            HandleRightStickScroll(gamepad);
+
             // RT → left click
             float rtTrigger = gamepad.RightTrigger / 255f;
             if (rtTrigger > TRIGGER_THRESHOLD)
@@ -85,13 +99,39 @@ namespace HaloShift
             bool ltPressed = ltTrigger2 > TRIGGER_THRESHOLD;
             bool rtPressed = rtTrigger2 > TRIGGER_THRESHOLD;
 
-            // X → Esc
-            if (x && !_xButtonWasPressed)
+            // Get D-Pad states
+            bool dpadUp = (gamepad.Buttons & GamepadButtonFlags.DPadUp) != 0;
+            bool dpadDown = (gamepad.Buttons & GamepadButtonFlags.DPadDown) != 0;
+
+            // LT + RT + D-Pad Up → Increase sensitivity
+            if (ltPressed && rtPressed && dpadUp && !_dpadUpWasPressed)
+            {
+                _mouseSensitivity = Math.Min(_mouseSensitivity + SENSITIVITY_STEP, MAX_SENSITIVITY);
+            }
+            _dpadUpWasPressed = dpadUp;
+
+            // LT + RT + D-Pad Down → Decrease sensitivity
+            if (ltPressed && rtPressed && dpadDown && !_dpadDownWasPressed)
+            {
+                _mouseSensitivity = Math.Max(_mouseSensitivity - SENSITIVITY_STEP, MIN_SENSITIVITY);
+            }
+            _dpadDownWasPressed = dpadDown;
+
+            // LT + RT + X → Middle click
+            bool middleClickCombo = ltPressed && rtPressed && x;
+            if (middleClickCombo && !_middleClickComboWasPressed)
+            {
+                InputSimulator.MiddleClick();
+            }
+            _middleClickComboWasPressed = middleClickCombo;
+
+            // X → Esc (only if not part of middle click combo)
+            if (x && !ltPressed && !rtPressed && !_xButtonWasPressed)
             {
                 // VK_ESCAPE = 0x1B
                 InputSimulator.PressKey(0x1B);
             }
-            _xButtonWasPressed = x;
+            _xButtonWasPressed = x && !ltPressed && !rtPressed;
 
             // LT + RT + B → Alt+F4
             bool altF4Combo = ltPressed && rtPressed && b;
@@ -167,14 +207,38 @@ namespace HaloShift
             stickX = ApplyAccelerationCurve(stickX);
             stickY = ApplyAccelerationCurve(stickY);
 
-            // Scale to pixel movement
-            const float SENSITIVITY = 60f; // Pixels per frame (3000 DPI equivalent)
-            int deltaX = (int)(stickX * SENSITIVITY);
-            int deltaY = (int)(-stickY * SENSITIVITY); // Invert Y axis
+            // Scale to pixel movement with sensitivity multiplier
+            const float BASE_SENSITIVITY = 60f; // Pixels per frame (3000 DPI equivalent)
+            float finalSensitivity = BASE_SENSITIVITY * _mouseSensitivity;
+            int deltaX = (int)(stickX * finalSensitivity);
+            int deltaY = (int)(-stickY * finalSensitivity); // Invert Y axis
 
             if (deltaX != 0 || deltaY != 0)
             {
                 InputSimulator.MoveMouse(deltaX, deltaY);
+            }
+        }
+
+        private void HandleRightStickScroll(Gamepad gamepad)
+        {
+            const float DEADZONE = 0.15f; // Normalized: 0.0 to 1.0
+            const float MAX_STICK_VALUE = 32767f;
+            const float SCROLL_SPEED = 120f; // Windows standard scroll delta is 120
+
+            // Normalize stick Y value from -32768..32767 to -1.0..1.0
+            float stickY = gamepad.RightThumbY / MAX_STICK_VALUE;
+
+            // Apply deadzone
+            if (Math.Abs(stickY) < DEADZONE)
+                return;
+
+            // Apply smooth scrolling with acceleration curve
+            float scrollAmount = ApplyAccelerationCurve(stickY) * SCROLL_SPEED;
+            int scrollDelta = (int)scrollAmount;
+
+            if (scrollDelta != 0)
+            {
+                InputSimulator.MouseWheel(scrollDelta);
             }
         }
 

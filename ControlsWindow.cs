@@ -30,7 +30,7 @@ namespace HaloShift
             this.SuspendLayout();
 
             this.Text = "HaloShift - Controller Mappings";
-            this.ClientSize = new Size(520, 600);
+            this.ClientSize = new Size(600, 760);
             this.FormBorderStyle = FormBorderStyle.None;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
@@ -73,7 +73,7 @@ namespace HaloShift
                 Text = "✕",
                 Font = new Font("Segoe UI", 16),
                 AutoSize = true,
-                Location = new Point(485, 15),
+                Location = new Point(515, 15),
                 ForeColor = Color.FromArgb(180, 180, 180),
                 Cursor = Cursors.Hand
             };
@@ -82,25 +82,25 @@ namespace HaloShift
             closeX.MouseLeave += (s, e) => closeX.ForeColor = Color.FromArgb(180, 180, 180);
             this.Controls.Add(closeX);
 
-            // Activation info panel
-            var activationPanel = CreateDarkPanel(60, 100);
+            // Activation info panel with visual highlight
+            var activationPanel = CreateHighlightPanel(60, 110);
             var activationTitle = new Label
             {
-                Text = "Activate Mouse Mode",
+                Text = "⚡ Mode Toggle",
                 Font = new Font("Segoe UI", 12, FontStyle.Bold),
                 AutoSize = true,
                 Location = new Point(15, 10),
-                ForeColor = Color.FromArgb(100, 200, 255)
+                ForeColor = Color.FromArgb(255, 215, 0) // Gold color
             };
             activationPanel.Controls.Add(activationTitle);
 
             var activationKeys = new Label
             {
                 Text = "LB + RB + Y",
-                Font = new Font("Segoe UI", 16, FontStyle.Bold),
+                Font = new Font("Segoe UI", 18, FontStyle.Bold),
                 AutoSize = true,
                 Location = new Point(15, 40),
-                ForeColor = Color.FromArgb(0, 200, 100)
+                ForeColor = Color.FromArgb(100, 255, 100) // Bright green
             };
             activationPanel.Controls.Add(activationKeys);
 
@@ -109,9 +109,9 @@ namespace HaloShift
                 Text = "Press all three buttons together to toggle between Controller and Mouse Mode",
                 Font = new Font("Segoe UI", 9),
                 AutoSize = false,
-                Size = new Size(450, 30),
-                Location = new Point(15, 70),
-                ForeColor = Color.FromArgb(180, 180, 180)
+                Size = new Size(480, 30),
+                Location = new Point(15, 75),
+                ForeColor = Color.FromArgb(200, 200, 200)
             };
             activationPanel.Controls.Add(activationDesc);
             this.Controls.Add(activationPanel);
@@ -119,31 +119,59 @@ namespace HaloShift
             // Mouse mode section
             var mouseModeLabel = new Label
             {
-                Text = "Mouse Mode",
+                Text = "🖱️ Mouse Mode Mappings",
                 Font = new Font("Segoe UI", 13, FontStyle.Bold),
                 AutoSize = true,
-                Location = new Point(20, 175),
+                Location = new Point(20, 185),
                 ForeColor = Color.FromArgb(100, 200, 255)
             };
             this.Controls.Add(mouseModeLabel);
 
-            var mousePanel = CreateDarkPanel(205, 270);
-            AddMappingLabel(mousePanel, "Left Stick", "Move mouse cursor", 0);
-            AddMappingLabel(mousePanel, "Right Trigger", "Left mouse click", 30);
-            AddMappingLabel(mousePanel, "Left Trigger", "Right mouse click", 60);
-            AddMappingLabel(mousePanel, "LB", "F11 (Fullscreen)", 90);
-            AddMappingLabel(mousePanel, "X", "Escape key", 120);
-            AddMappingLabel(mousePanel, "B", "Browser Back", 150);
-            AddMappingLabel(mousePanel, "LT + RT + A", "Ctrl + W (Close tab)", 180);
-            AddMappingLabel(mousePanel, "LT + RT + B", "Alt + F4 (Close window)", 210);
-            this.Controls.Add(mousePanel);
+            // Mouse Actions Section
+            var mouseActionsLabel = CreateSectionLabel("Mouse Actions", 20, 215);
+            this.Controls.Add(mouseActionsLabel);
+
+            var mouseActionsPanel = CreateDarkPanel(240, 150);
+            AddMappingLabelWithGlyph(mouseActionsPanel, "Left Stick", "Move mouse cursor", "🖱️", 0);
+            AddMappingLabelWithGlyph(mouseActionsPanel, "Right Trigger", "Left mouse click", "👆", 30);
+            AddMappingLabelWithGlyph(mouseActionsPanel, "Left Trigger", "Right mouse click", "👉", 60);
+            AddMappingLabelWithGlyph(mouseActionsPanel, "Right Stick ↕", "Scroll wheel", "📜", 90);
+            AddMappingLabelWithGlyph(mouseActionsPanel, "LT + RT + X", "Middle mouse click", "🖱️", 120);
+            this.Controls.Add(mouseActionsPanel);
+
+            // Navigation Section
+            var navLabel = CreateSectionLabel("Navigation", 20, 405);
+            this.Controls.Add(navLabel);
+
+            var navPanel = CreateDarkPanel(430, 60);
+            AddMappingLabelWithGlyph(navPanel, "X", "Escape key", "🔙", 0);
+            AddMappingLabelWithGlyph(navPanel, "B", "Browser Back", "◀️", 30);
+            this.Controls.Add(navPanel);
+
+            // Window Control Section
+            var windowLabel = CreateSectionLabel("Window Control", 20, 505);
+            this.Controls.Add(windowLabel);
+
+            var windowPanel = CreateDarkPanel(530, 60);
+            AddMappingLabelWithGlyph(windowPanel, "LT + RT + A", "Ctrl + W (Close tab)", "❌", 0);
+            AddMappingLabelWithGlyph(windowPanel, "LT + RT + B", "Alt + F4 (Close window)", "🗙", 30);
+            this.Controls.Add(windowPanel);
+
+            // Fullscreen Section
+            var fullscreenLabel = CreateSectionLabel("Fullscreen & Settings", 20, 595);
+            this.Controls.Add(fullscreenLabel);
+
+            var fullscreenPanel = CreateDarkPanel(620, 60);
+            AddMappingLabelWithGlyph(fullscreenPanel, "LB", "F11 (Fullscreen)", "⛶", 0);
+            AddMappingLabelWithGlyph(fullscreenPanel, "LT + RT + D-Pad ↕", "Adjust sensitivity", "⚙️", 30);
+            this.Controls.Add(fullscreenPanel);
 
             // Close button
             var closeButton = new Button
             {
                 Text = "Close",
                 Size = new Size(120, 40),
-                Location = new Point(200, 500),
+                Location = new Point(215, 705),
                 Font = new Font("Segoe UI", 11),
                 BackColor = Color.FromArgb(0, 120, 215),
                 ForeColor = Color.White,
@@ -171,13 +199,48 @@ namespace HaloShift
             var panel = new Panel
             {
                 Location = new Point(20, y),
-                Size = new Size(480, height),
+                Size = new Size(560, height),
                 BackColor = Color.FromArgb(45, 45, 48),
                 BorderStyle = BorderStyle.None,
                 Padding = new Padding(5)
             };
 
             return panel;
+        }
+
+        private Panel CreateHighlightPanel(int y, int height)
+        {
+            var panel = new Panel
+            {
+                Location = new Point(20, y),
+                Size = new Size(560, height),
+                BackColor = Color.FromArgb(55, 50, 35), // Dark gold tint
+                BorderStyle = BorderStyle.FixedSingle,
+                Padding = new Padding(5)
+            };
+
+            // Add glowing effect with border
+            panel.Paint += (s, e) =>
+            {
+                using (var pen = new Pen(Color.FromArgb(255, 215, 0), 2))
+                {
+                    e.Graphics.DrawRectangle(pen, 0, 0, panel.Width - 1, panel.Height - 1);
+                }
+            };
+
+            return panel;
+        }
+
+        private Label CreateSectionLabel(string text, int x, int y)
+        {
+            return new Label
+            {
+                Text = text,
+                Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                AutoSize = true,
+                Location = new Point(x, y),
+                ForeColor = Color.FromArgb(150, 150, 150)
+            };
         }
 
         private void AddMappingLabel(Panel panel, string button, string action, int yOffset)
@@ -208,6 +271,49 @@ namespace HaloShift
                 Font = new Font("Segoe UI", 10),
                 AutoSize = true,
                 Location = new Point(185, 15 + yOffset),
+                ForeColor = Color.FromArgb(220, 220, 220)
+            };
+            panel.Controls.Add(actionLabel);
+        }
+
+        private void AddMappingLabelWithGlyph(Panel panel, string button, string action, string glyph, int yOffset)
+        {
+            var glyphLabel = new Label
+            {
+                Text = glyph,
+                Font = new Font("Segoe UI", 12),
+                AutoSize = true,
+                Location = new Point(15, 13 + yOffset),
+                ForeColor = Color.FromArgb(255, 200, 100)
+            };
+            panel.Controls.Add(glyphLabel);
+
+            var buttonLabel = new Label
+            {
+                Text = button,
+                Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                AutoSize = true,
+                Location = new Point(45, 15 + yOffset),
+                ForeColor = Color.FromArgb(100, 200, 255)
+            };
+            panel.Controls.Add(buttonLabel);
+
+            var arrow = new Label
+            {
+                Text = "→",
+                Font = new Font("Segoe UI", 10),
+                AutoSize = true,
+                Location = new Point(220, 15 + yOffset),
+                ForeColor = Color.FromArgb(150, 150, 150)
+            };
+            panel.Controls.Add(arrow);
+
+            var actionLabel = new Label
+            {
+                Text = action,
+                Font = new Font("Segoe UI", 10),
+                AutoSize = true,
+                Location = new Point(245, 15 + yOffset),
                 ForeColor = Color.FromArgb(220, 220, 220)
             };
             panel.Controls.Add(actionLabel);

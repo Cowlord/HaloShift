@@ -136,7 +136,7 @@ namespace HaloShift
         private void SetupUpdateTimer()
         {
             _updateTimer = new Timer();
-            _updateTimer.Interval = 16; // ~60 FPS for responsive input handling
+            _updateTimer.Interval = 8; // ~120 Hz for low-latency input handling
             _updateTimer.Tick += UpdateTimer_Tick;
             _updateTimer.Start();
         }

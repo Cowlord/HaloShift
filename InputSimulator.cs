@@ -66,6 +66,9 @@ namespace HaloShift
         private const uint MOUSEEVENTF_LEFTUP = 0x0004;
         private const uint MOUSEEVENTF_RIGHTDOWN = 0x0008;
         private const uint MOUSEEVENTF_RIGHTUP = 0x0010;
+        private const uint MOUSEEVENTF_MIDDLEDOWN = 0x0020;
+        private const uint MOUSEEVENTF_MIDDLEUP = 0x0040;
+        private const uint MOUSEEVENTF_WHEEL = 0x0800;
 
         private const uint KEYEVENTF_KEYDOWN = 0x0000;
         private const uint KEYEVENTF_KEYUP = 0x0002;
@@ -170,6 +173,68 @@ namespace HaloShift
 
             INPUT[] inputs = new[] { downInput, upInput };
             SendInput(2, inputs, Marshal.SizeOf(typeof(INPUT)));
+        }
+
+        public static void MiddleClick()
+        {
+            var downInput = new INPUT
+            {
+                Type = INPUT_MOUSE,
+                U = new InputUnion
+                {
+                    mi = new MOUSEINPUT
+                    {
+                        dx = 0,
+                        dy = 0,
+                        mouseData = 0,
+                        dwFlags = MOUSEEVENTF_MIDDLEDOWN,
+                        time = 0,
+                        dwExtraInfo = IntPtr.Zero
+                    }
+                }
+            };
+
+            var upInput = new INPUT
+            {
+                Type = INPUT_MOUSE,
+                U = new InputUnion
+                {
+                    mi = new MOUSEINPUT
+                    {
+                        dx = 0,
+                        dy = 0,
+                        mouseData = 0,
+                        dwFlags = MOUSEEVENTF_MIDDLEUP,
+                        time = 0,
+                        dwExtraInfo = IntPtr.Zero
+                    }
+                }
+            };
+
+            INPUT[] inputs = new[] { downInput, upInput };
+            SendInput(2, inputs, Marshal.SizeOf(typeof(INPUT)));
+        }
+
+        public static void MouseWheel(int delta)
+        {
+            var input = new INPUT
+            {
+                Type = INPUT_MOUSE,
+                U = new InputUnion
+                {
+                    mi = new MOUSEINPUT
+                    {
+                        dx = 0,
+                        dy = 0,
+                        mouseData = (uint)delta,
+                        dwFlags = MOUSEEVENTF_WHEEL,
+                        time = 0,
+                        dwExtraInfo = IntPtr.Zero
+                    }
+                }
+            };
+
+            SendInput(1, new[] { input }, Marshal.SizeOf(typeof(INPUT)));
         }
 
         public static void SendKey(byte keyCode, bool keyDown)
