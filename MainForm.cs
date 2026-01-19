@@ -2,6 +2,7 @@ using System;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using System.Drawing;
+using System.Windows.Media;
 
 namespace HaloShift
 {
@@ -11,6 +12,8 @@ namespace HaloShift
         private ModeManager _modeManager;
         private Timer _updateTimer;
         private NotifyIcon _notifyIcon;
+        private MediaPlayer _activateSound;
+        private MediaPlayer _deactivateSound;
 
         [DllImport("user32.dll")]
         private static extern bool SetForegroundWindow(IntPtr hWnd);
@@ -39,6 +42,7 @@ namespace HaloShift
             InitializeComponent();
             SetupTrayIcon();
             SetupUpdateTimer();
+            LoadSounds();
 
             _modeManager.ModeChanged += ModeManager_ModeChanged;
         }
@@ -56,6 +60,20 @@ namespace HaloShift
             this.ShowInTaskbar = false;
             this.WindowState = FormWindowState.Minimized;
             this.Location = new System.Drawing.Point(-10000, -10000); // Off-screen
+
+            // Set form icon from embedded resource
+            try
+            {
+                using (var stream = System.Reflection.Assembly.GetExecutingAssembly()
+                    .GetManifestResourceStream("HaloShift.AppIcon.ico"))
+                {
+                    if (stream != null)
+                    {
+                        this.Icon = new Icon(stream);
+                    }
+                }
+            }
+            catch { }
 
             // Hide from Alt+Tab by setting as tool window
             IntPtr exStyle = GetWindowLong(this.Handle, GWL_EXSTYLE);
@@ -80,15 +98,16 @@ namespace HaloShift
             _notifyIcon = new NotifyIcon();
             _notifyIcon.Icon = SystemIcons.Application;
 
-            // Try to load icon if it exists
+            // Try to load icon from embedded resource
             try
             {
-                var iconPath = System.IO.Path.Combine(
-                    System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
-                    "AppIcon.ico");
-                if (System.IO.File.Exists(iconPath))
+                using (var stream = System.Reflection.Assembly.GetExecutingAssembly()
+                    .GetManifestResourceStream("HaloShift.AppIcon.ico"))
                 {
-                    _notifyIcon.Icon = new Icon(iconPath);
+                    if (stream != null)
+                    {
+                        _notifyIcon.Icon = new Icon(stream);
+                    }
                 }
             }
             catch { }
@@ -144,6 +163,9 @@ namespace HaloShift
         {
             if (e.NewMode == AppMode.Mouse)
             {
+                // Play activation sound
+                PlayActivationSound();
+
                 // Bring window to foreground
                 if (IsIconic(this.Handle))
                 {
@@ -155,6 +177,9 @@ namespace HaloShift
             }
             else
             {
+                // Play deactivation sound
+                PlayDeactivationSound();
+
                 // Minimize window
                 this.WindowState = FormWindowState.Minimized;
                 this.Location = new System.Drawing.Point(-10000, -10000);
@@ -166,6 +191,57 @@ namespace HaloShift
             {
                 statusLabel.Text = $"Mode: {e.NewMode}";
             }
+        }
+
+        private void LoadSounds()
+        {
+            try
+            {
+                var basePath = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+
+                var activatePath = System.IO.Path.Combine(basePath, "sound_activate.wav");
+                if (System.IO.File.Exists(activatePath))
+                {
+                    _activateSound = new MediaPlayer();
+                    _activateSound.Open(new Uri(activatePath));
+                    _activateSound.Volume = 0.7;
+                }
+
+                var deactivatePath = System.IO.Path.Combine(basePath, "sound_deactivate.wav");
+                if (System.IO.File.Exists(deactivatePath))
+                {
+                    _deactivateSound = new MediaPlayer();
+                    _deactivateSound.Open(new Uri(deactivatePath));
+                    _deactivateSound.Volume = 0.7;
+                }
+            }
+            catch { }
+        }
+
+        private void PlayActivationSound()
+        {
+            try
+            {
+                if (_activateSound != null)
+                {
+                    _activateSound.Position = TimeSpan.Zero;
+                    _activateSound.Play();
+                }
+            }
+            catch { }
+        }
+
+        private void PlayDeactivationSound()
+        {
+            try
+            {
+                if (_deactivateSound != null)
+                {
+                    _deactivateSound.Position = TimeSpan.Zero;
+                    _deactivateSound.Play();
+                }
+            }
+            catch { }
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)
