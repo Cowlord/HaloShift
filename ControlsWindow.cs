@@ -30,7 +30,7 @@ namespace HaloShift
             this.SuspendLayout();
 
             this.Text = "HaloShift - Controller Mappings";
-            this.ClientSize = new Size(520, 620);
+            this.ClientSize = new Size(520, 600);
             this.FormBorderStyle = FormBorderStyle.None;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
@@ -127,37 +127,23 @@ namespace HaloShift
             };
             this.Controls.Add(mouseModeLabel);
 
-            var mousePanel = CreateDarkPanel(205, 150);
+            var mousePanel = CreateDarkPanel(205, 270);
             AddMappingLabel(mousePanel, "Left Stick", "Move mouse cursor", 0);
             AddMappingLabel(mousePanel, "Right Trigger", "Left mouse click", 30);
             AddMappingLabel(mousePanel, "Left Trigger", "Right mouse click", 60);
             AddMappingLabel(mousePanel, "LB", "F11 (Fullscreen)", 90);
+            AddMappingLabel(mousePanel, "X", "Escape key", 120);
+            AddMappingLabel(mousePanel, "B", "Browser Back", 150);
+            AddMappingLabel(mousePanel, "LT + RT + A", "Ctrl + W (Close tab)", 180);
+            AddMappingLabel(mousePanel, "LT + RT + B", "Alt + F4 (Close window)", 210);
             this.Controls.Add(mousePanel);
-
-            // Global shortcuts section
-            var globalLabel = new Label
-            {
-                Text = "Global Shortcuts (Both Modes)",
-                Font = new Font("Segoe UI", 13, FontStyle.Bold),
-                AutoSize = true,
-                Location = new Point(20, 370),
-                ForeColor = Color.FromArgb(100, 200, 255)
-            };
-            this.Controls.Add(globalLabel);
-
-            var globalPanel = CreateDarkPanel(400, 150);
-            AddMappingLabel(globalPanel, "X", "Escape key", 0);
-            AddMappingLabel(globalPanel, "B", "Browser Back", 30);
-            AddMappingLabel(globalPanel, "LT + RT + A", "Ctrl + W (Close tab)", 60);
-            AddMappingLabel(globalPanel, "LT + RT + B", "Alt + F4 (Close window)", 90);
-            this.Controls.Add(globalPanel);
 
             // Close button
             var closeButton = new Button
             {
                 Text = "Close",
                 Size = new Size(120, 40),
-                Location = new Point(200, 565),
+                Location = new Point(200, 500),
                 Font = new Font("Segoe UI", 11),
                 BackColor = Color.FromArgb(0, 120, 215),
                 ForeColor = Color.White,

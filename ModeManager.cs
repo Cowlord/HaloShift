@@ -99,10 +99,13 @@ namespace HaloShift
             {
                 // Send Alt+F4
                 InputSimulator.SendKey(0x12, true);  // Alt down
+                System.Threading.Thread.Sleep(10);
                 InputSimulator.SendKey(0x73, true);  // F4 down
                 System.Threading.Thread.Sleep(50);
                 InputSimulator.SendKey(0x73, false); // F4 up
+                System.Threading.Thread.Sleep(10);
                 InputSimulator.SendKey(0x12, false); // Alt up
+                System.Threading.Thread.Sleep(10);
             }
             _altF4ComboWasPressed = altF4Combo;
 
@@ -112,10 +115,13 @@ namespace HaloShift
             {
                 // Send Ctrl+W
                 InputSimulator.SendKey(0x11, true);  // Ctrl down
+                System.Threading.Thread.Sleep(10);
                 InputSimulator.SendKey(0x57, true);  // W down
                 System.Threading.Thread.Sleep(50);
                 InputSimulator.SendKey(0x57, false); // W up
+                System.Threading.Thread.Sleep(10);
                 InputSimulator.SendKey(0x11, false); // Ctrl up
+                System.Threading.Thread.Sleep(10);
             }
             _ctrlWComboWasPressed = ctrlWCombo;
 
