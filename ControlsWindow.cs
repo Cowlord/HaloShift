@@ -30,7 +30,7 @@ namespace HaloShift
             this.SuspendLayout();
 
             this.Text = "HaloShift - Controller Mappings";
-            this.ClientSize = new Size(600, 760);
+            this.ClientSize = new Size(600, 860);
             this.FormBorderStyle = FormBorderStyle.None;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
@@ -131,37 +131,39 @@ namespace HaloShift
             var mouseActionsLabel = CreateSectionLabel("Mouse Actions", 20, 215);
             this.Controls.Add(mouseActionsLabel);
 
-            var mouseActionsPanel = CreateDarkPanel(240, 150);
+            var mouseActionsPanel = CreateDarkPanel(240, 220);
             AddMappingLabelWithGlyph(mouseActionsPanel, "Left Stick", "Move mouse cursor", "🖱️", 0);
-            AddMappingLabelWithGlyph(mouseActionsPanel, "Right Trigger", "Left mouse click", "👆", 30);
-            AddMappingLabelWithGlyph(mouseActionsPanel, "Left Trigger", "Right mouse click", "👉", 60);
-            AddMappingLabelWithGlyph(mouseActionsPanel, "Right Stick ↕", "Scroll wheel", "📜", 90);
-            AddMappingLabelWithGlyph(mouseActionsPanel, "LT + RT + X", "Middle mouse click", "🖱️", 120);
+            AddMappingLabelWithGlyph(mouseActionsPanel, "Left Stick Click", "Windows key", "⊞", 30);
+            AddMappingLabelWithGlyph(mouseActionsPanel, "Right Stick ↕", "Scroll wheel", "📜", 60);
+            AddMappingLabelWithGlyph(mouseActionsPanel, "Right Stick Click", "F5", "⟳", 90);
+            AddMappingLabelWithGlyph(mouseActionsPanel, "Right Trigger", "Left mouse click", "👆", 120);
+            AddMappingLabelWithGlyph(mouseActionsPanel, "Left Trigger", "Right mouse click", "👉", 150);
+            AddMappingLabelWithGlyph(mouseActionsPanel, "LT + RT + X", "Middle mouse click", "🖱️", 180);
             this.Controls.Add(mouseActionsPanel);
 
             // Navigation Section
-            var navLabel = CreateSectionLabel("Navigation", 20, 405);
+            var navLabel = CreateSectionLabel("Navigation", 20, 480);
             this.Controls.Add(navLabel);
 
-            var navPanel = CreateDarkPanel(430, 60);
+            var navPanel = CreateDarkPanel(505, 60);
             AddMappingLabelWithGlyph(navPanel, "X", "Escape key", "🔙", 0);
             AddMappingLabelWithGlyph(navPanel, "B", "Browser Back", "◀️", 30);
             this.Controls.Add(navPanel);
 
             // Window Control Section
-            var windowLabel = CreateSectionLabel("Window Control", 20, 505);
+            var windowLabel = CreateSectionLabel("Window Control", 20, 585);
             this.Controls.Add(windowLabel);
 
-            var windowPanel = CreateDarkPanel(530, 60);
+            var windowPanel = CreateDarkPanel(610, 60);
             AddMappingLabelWithGlyph(windowPanel, "LT + RT + A", "Ctrl + W (Close tab)", "❌", 0);
             AddMappingLabelWithGlyph(windowPanel, "LT + RT + B", "Alt + F4 (Close window)", "🗙", 30);
             this.Controls.Add(windowPanel);
 
             // Fullscreen Section
-            var fullscreenLabel = CreateSectionLabel("Fullscreen & Settings", 20, 595);
+            var fullscreenLabel = CreateSectionLabel("Fullscreen & Settings", 20, 690);
             this.Controls.Add(fullscreenLabel);
 
-            var fullscreenPanel = CreateDarkPanel(620, 60);
+            var fullscreenPanel = CreateDarkPanel(715, 60);
             AddMappingLabelWithGlyph(fullscreenPanel, "LB", "F11 (Fullscreen)", "⛶", 0);
             AddMappingLabelWithGlyph(fullscreenPanel, "LT + RT + D-Pad ↕", "Adjust sensitivity", "⚙️", 30);
             this.Controls.Add(fullscreenPanel);
@@ -171,7 +173,7 @@ namespace HaloShift
             {
                 Text = "Close",
                 Size = new Size(120, 40),
-                Location = new Point(215, 705),
+                Location = new Point(215, 805),
                 Font = new Font("Segoe UI", 11),
                 BackColor = Color.FromArgb(0, 120, 215),
                 ForeColor = Color.White,

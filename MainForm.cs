@@ -3,6 +3,7 @@ using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using System.Drawing;
 using System.Windows.Media;
+using DrawingColor = System.Drawing.Color;
 
 namespace HaloShift
 {
@@ -14,6 +15,7 @@ namespace HaloShift
         private NotifyIcon _notifyIcon;
         private MediaPlayer _activateSound;
         private MediaPlayer _deactivateSound;
+        private SensitivityOverlay _sensitivityOverlay;
 
         [DllImport("user32.dll")]
         private static extern bool SetForegroundWindow(IntPtr hWnd);
@@ -43,8 +45,10 @@ namespace HaloShift
             SetupTrayIcon();
             SetupUpdateTimer();
             LoadSounds();
+            SetupSensitivityOverlay();
 
             _modeManager.ModeChanged += ModeManager_ModeChanged;
+            _modeManager.SensitivityChanged += ModeManager_SensitivityChanged;
         }
 
         private void InitializeComponent()
@@ -159,6 +163,11 @@ namespace HaloShift
             }
         }
 
+        private void ModeManager_SensitivityChanged(object sender, SensitivityChangedEventArgs e)
+        {
+            _sensitivityOverlay?.ShowValue(e.NewSensitivity);
+        }
+
         private void ModeManager_ModeChanged(object sender, ModeChangedEventArgs e)
         {
             if (e.NewMode == AppMode.Mouse)
@@ -268,8 +277,14 @@ namespace HaloShift
             _updateTimer?.Dispose();
             _notifyIcon?.Dispose();
             _modeManager = null;
+            _sensitivityOverlay?.Dispose();
 
             base.OnFormClosing(e);
+        }
+
+        private void SetupSensitivityOverlay()
+        {
+            _sensitivityOverlay = new SensitivityOverlay();
         }
 
         private void ShowControlsWindow()
@@ -285,6 +300,56 @@ namespace HaloShift
                 this.ShowInTaskbar = false;
             }
             base.OnResize(e);
+        }
+
+        private class SensitivityOverlay : Form
+        {
+            private readonly Label _label;
+            private readonly Timer _hideTimer;
+
+            public SensitivityOverlay()
+            {
+                FormBorderStyle = FormBorderStyle.None;
+                ShowInTaskbar = false;
+                TopMost = true;
+                StartPosition = FormStartPosition.Manual;
+                BackColor = DrawingColor.FromArgb(30, 30, 30);
+                Opacity = 0.9;
+                Size = new Size(220, 60);
+
+                _label = new Label
+                {
+                    Dock = DockStyle.Fill,
+                    TextAlign = System.Drawing.ContentAlignment.MiddleCenter,
+                    ForeColor = DrawingColor.White,
+                    Font = new Font("Segoe UI", 12, FontStyle.Bold)
+                };
+                Controls.Add(_label);
+
+                _hideTimer = new Timer();
+                _hideTimer.Interval = 1500;
+                _hideTimer.Tick += (s, e) =>
+                {
+                    Hide();
+                    _hideTimer.Stop();
+                };
+            }
+
+            public void ShowValue(float sensitivity)
+            {
+                _label.Text = $"Sensitivity: {sensitivity:F1}";
+
+                var workArea = Screen.PrimaryScreen.WorkingArea;
+                Location = new Point(
+                    workArea.Left + (workArea.Width - Width) / 2,
+                    workArea.Top + (int)(workArea.Height * 0.15));
+
+                Show();
+                BringToFront();
+
+                _hideTimer.Stop();
+                _hideTimer.Start();
+            }
         }
     }
 }

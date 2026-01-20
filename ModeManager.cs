@@ -15,6 +15,7 @@ namespace HaloShift
         public AppMode CurrentMode => _currentMode;
 
         public event EventHandler<ModeChangedEventArgs> ModeChanged;
+        public event EventHandler<SensitivityChangedEventArgs> SensitivityChanged;
 
         private const float TRIGGER_THRESHOLD = 0.5f; // Normalized: 0.0 to 1.0
         private bool _toggleButtonWasPressed = false;
@@ -24,6 +25,8 @@ namespace HaloShift
         private bool _ctrlWComboWasPressed = false;
         private bool _bButtonWasPressed = false;
         private bool _middleClickComboWasPressed = false;
+        private bool _rightStickWasPressed = false;
+        private bool _leftStickWasPressed = false;
         private bool _dpadUpWasPressed = false;
         private bool _dpadDownWasPressed = false;
 
@@ -92,6 +95,8 @@ namespace HaloShift
             bool x = (gamepad.Buttons & GamepadButtonFlags.X) != 0;
             bool b = (gamepad.Buttons & GamepadButtonFlags.B) != 0;
             bool a = (gamepad.Buttons & GamepadButtonFlags.A) != 0;
+            bool rightStickClick = (gamepad.Buttons & GamepadButtonFlags.RightThumb) != 0;
+            bool leftStickClick = (gamepad.Buttons & GamepadButtonFlags.LeftThumb) != 0;
 
             // Get trigger states
             float ltTrigger2 = gamepad.LeftTrigger / 255f;
@@ -103,17 +108,29 @@ namespace HaloShift
             bool dpadUp = (gamepad.Buttons & GamepadButtonFlags.DPadUp) != 0;
             bool dpadDown = (gamepad.Buttons & GamepadButtonFlags.DPadDown) != 0;
 
+            float previousSensitivity = _mouseSensitivity;
+
             // LT + RT + D-Pad Up → Increase sensitivity
             if (ltPressed && rtPressed && dpadUp && !_dpadUpWasPressed)
             {
-                _mouseSensitivity = Math.Min(_mouseSensitivity + SENSITIVITY_STEP, MAX_SENSITIVITY);
+                float newSensitivity = Math.Min(_mouseSensitivity + SENSITIVITY_STEP, MAX_SENSITIVITY);
+                if (newSensitivity != _mouseSensitivity)
+                {
+                    _mouseSensitivity = newSensitivity;
+                    RaiseSensitivityChanged(newSensitivity);
+                }
             }
             _dpadUpWasPressed = dpadUp;
 
             // LT + RT + D-Pad Down → Decrease sensitivity
             if (ltPressed && rtPressed && dpadDown && !_dpadDownWasPressed)
             {
-                _mouseSensitivity = Math.Max(_mouseSensitivity - SENSITIVITY_STEP, MIN_SENSITIVITY);
+                float newSensitivity = Math.Max(_mouseSensitivity - SENSITIVITY_STEP, MIN_SENSITIVITY);
+                if (newSensitivity != _mouseSensitivity)
+                {
+                    _mouseSensitivity = newSensitivity;
+                    RaiseSensitivityChanged(newSensitivity);
+                }
             }
             _dpadDownWasPressed = dpadDown;
 
@@ -172,6 +189,22 @@ namespace HaloShift
                 InputSimulator.PressKey(0xA6);
             }
             _bButtonWasPressed = b;
+
+            // Right Stick Click → F5
+            if (rightStickClick && !_rightStickWasPressed)
+            {
+                // VK_F5 = 0x74
+                InputSimulator.PressKey(0x74);
+            }
+            _rightStickWasPressed = rightStickClick;
+
+            // Left Stick Click → Windows key
+            if (leftStickClick && !_leftStickWasPressed)
+            {
+                // VK_LWIN = 0x5B
+                InputSimulator.PressKey(0x5B);
+            }
+            _leftStickWasPressed = leftStickClick;
 
             // LB → send F11 (full-screen toggle) ONLY if not part of toggle combo
             bool lbAlone = lb && !rb && !y;
@@ -248,6 +281,11 @@ namespace HaloShift
             // s(x) = sign(x) * x^2
             return stick < 0 ? -(stick * stick) : stick * stick;
         }
+
+        private void RaiseSensitivityChanged(float newValue)
+        {
+            SensitivityChanged?.Invoke(this, new SensitivityChangedEventArgs(newValue));
+        }
     }
 
     public class ModeChangedEventArgs : EventArgs
@@ -257,6 +295,16 @@ namespace HaloShift
         public ModeChangedEventArgs(AppMode newMode)
         {
             NewMode = newMode;
+        }
+    }
+
+    public class SensitivityChangedEventArgs : EventArgs
+    {
+        public float NewSensitivity { get; }
+
+        public SensitivityChangedEventArgs(float newSensitivity)
+        {
+            NewSensitivity = newSensitivity;
         }
     }
 }
