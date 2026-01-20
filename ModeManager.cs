@@ -110,8 +110,8 @@ namespace HaloShift
 
             float previousSensitivity = _mouseSensitivity;
 
-            // LT + RT + D-Pad Up → Increase sensitivity
-            if (ltPressed && rtPressed && dpadUp && !_dpadUpWasPressed)
+            // D-Pad Up → Increase sensitivity
+            if (dpadUp && !_dpadUpWasPressed)
             {
                 float newSensitivity = Math.Min(_mouseSensitivity + SENSITIVITY_STEP, MAX_SENSITIVITY);
                 if (newSensitivity != _mouseSensitivity)
@@ -122,8 +122,8 @@ namespace HaloShift
             }
             _dpadUpWasPressed = dpadUp;
 
-            // LT + RT + D-Pad Down → Decrease sensitivity
-            if (ltPressed && rtPressed && dpadDown && !_dpadDownWasPressed)
+            // D-Pad Down → Decrease sensitivity
+            if (dpadDown && !_dpadDownWasPressed)
             {
                 float newSensitivity = Math.Max(_mouseSensitivity - SENSITIVITY_STEP, MIN_SENSITIVITY);
                 if (newSensitivity != _mouseSensitivity)

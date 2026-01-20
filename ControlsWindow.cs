@@ -165,7 +165,7 @@ namespace HaloShift
 
             var fullscreenPanel = CreateDarkPanel(715, 60);
             AddMappingLabelWithGlyph(fullscreenPanel, "LB", "F11 (Fullscreen)", "⛶", 0);
-            AddMappingLabelWithGlyph(fullscreenPanel, "LT + RT + D-Pad ↕", "Adjust sensitivity", "⚙️", 30);
+            AddMappingLabelWithGlyph(fullscreenPanel, "D-Pad ↕", "Adjust sensitivity", "⚙️", 30);
             this.Controls.Add(fullscreenPanel);
 
             // Close button
