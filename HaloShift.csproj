@@ -8,6 +8,12 @@
     <RootNamespace>HaloShift</RootNamespace>
     <AssemblyName>HaloShift</AssemblyName>
     <UseWPF>true</UseWPF>
+    <!-- Single source of truth for app version -->
+    <VersionPrefix>1.2.5.0</VersionPrefix>
+    <Version>$(VersionPrefix)</Version>
+    <AssemblyVersion>$(VersionPrefix)</AssemblyVersion>
+    <FileVersion>$(VersionPrefix)</FileVersion>
+    <InformationalVersion>$(VersionPrefix)</InformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>

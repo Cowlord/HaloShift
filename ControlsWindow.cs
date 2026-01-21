@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
+using System.Reflection;
 
 namespace HaloShift
 {
@@ -17,38 +18,133 @@ namespace HaloShift
         private const int WM_NCLBUTTONDOWN = 0xA1;
         private const int HT_CAPTION = 0x2;
 
-        // Xbox Official Colors
-        private static readonly Color DarkBg = Color.FromArgb(16, 16, 20);
-        private static readonly Color CardBg = Color.FromArgb(25, 25, 32);
-        private static readonly Color AccentGreen = Color.FromArgb(16, 124, 16);
-        private static readonly Color BrightGreen = Color.FromArgb(34, 177, 76);
-        private static readonly Color XboxYellow = Color.FromArgb(255, 198, 0);
-        private static readonly Color XboxBlue = Color.FromArgb(16, 124, 201);
-        private static readonly Color XboxRed = Color.FromArgb(201, 43, 36);
+        // Palette from HTML mock
+        private static readonly Color ContainerBg = Color.FromArgb(13, 13, 13);
+        private static readonly Color PanelBg = Color.FromArgb(26, 26, 26);
+        private static readonly Color BorderAccent = Color.FromArgb(34, 170, 34);
+        private static readonly Color BorderSubtle = Color.FromArgb(51, 51, 51);
         private static readonly Color TextPrimary = Color.FromArgb(255, 255, 255);
-        private static readonly Color TextSecondary = Color.FromArgb(191, 191, 191);
-        private static readonly Color TextTertiary = Color.FromArgb(127, 127, 127);
-        private static readonly Color BorderColor = Color.FromArgb(55, 55, 60);
+        private static readonly Color TextSecondary = Color.FromArgb(170, 170, 170);
+        private static readonly Color TextMuted = Color.FromArgb(136, 136, 136);
+        private static readonly Color AccentGreen = Color.FromArgb(34, 255, 34);
+        private static readonly Color AccentYellow = Color.FromArgb(255, 255, 0);
+        private static readonly Color AccentBlue = Color.FromArgb(0, 255, 255);
+        private static readonly Color AccentRed = Color.FromArgb(255, 51, 51);
+        private static readonly Color AccentOrange = Color.FromArgb(255, 136, 0);
 
-        private int _currentY = 50;
+        private const int FormWidth = 700;
+        private const int ContentMargin = 16;
+        private const int SectionGap = 12;
+
+        private static string AppVersion => $"v{GetAssemblyVersion()}";
 
         public ControlsWindow()
         {
             InitializeComponent();
         }
 
+        private Control CreateInputControl(string input)
+        {
+            // Check for combo inputs ending with a button letter (e.g., "LT + RT + X")
+            var comboMatch = System.Text.RegularExpressions.Regex.Match(input, @"^(.+\+\s*)([XYAB])$");
+            if (comboMatch.Success)
+            {
+                string prefix = comboMatch.Groups[1].Value;
+                string buttonLetter = comboMatch.Groups[2].Value;
+                Color buttonColor = buttonLetter switch
+                {
+                    "Y" => AccentYellow,
+                    "X" => AccentBlue,
+                    "B" => AccentRed,
+                    "A" => AccentGreen,
+                    _ => Color.White
+                };
+                bool isFilled = buttonLetter == "Y";
+
+                var prefixLabel = new Label
+                {
+                    Text = prefix,
+                    Font = new Font("Segoe UI", 11, FontStyle.Regular),
+                    ForeColor = Color.FromArgb(176, 176, 176),
+                    AutoSize = true,
+                    Location = new Point(0, 4)
+                };
+
+                var badge = CreateButtonBadge(buttonLetter, buttonColor, isFilled);
+                badge.Location = new Point(prefixLabel.PreferredWidth, 0);
+
+                var container = new Panel
+                {
+                    Size = new Size(prefixLabel.PreferredWidth + badge.Width, 28),
+                    BackColor = Color.Transparent
+                };
+                container.Controls.Add(prefixLabel);
+                container.Controls.Add(badge);
+
+                return container;
+            }
+
+            // Detect single button inputs and render as badges
+            string singleButton = null;
+            Color singleColor = Color.Transparent;
+            bool singleFilled = false;
+
+            if (input.EndsWith(" Y") || input == "Y")
+            {
+                singleButton = "Y";
+                singleColor = AccentYellow;
+                singleFilled = true;
+            }
+            else if (input.EndsWith(" X") || input == "X")
+            {
+                singleButton = "X";
+                singleColor = AccentBlue;
+                singleFilled = false;
+            }
+            else if (input.EndsWith(" B") || input == "B")
+            {
+                singleButton = "B";
+                singleColor = AccentRed;
+                singleFilled = false;
+            }
+            else if (input.EndsWith(" A") || input == "A")
+            {
+                singleButton = "A";
+                singleColor = AccentGreen;
+                singleFilled = false;
+            }
+
+            // Render as badge if single button, otherwise as text label
+            if (singleButton != null)
+            {
+                var badge = CreateButtonBadge(singleButton, singleColor, singleFilled);
+                badge.Size = new Size(32, 28);
+                return badge;
+            }
+            else
+            {
+                return new Label
+                {
+                    Text = input,
+                    Font = new Font("Segoe UI", 11, FontStyle.Regular),
+                    ForeColor = Color.FromArgb(176, 176, 176),
+                    AutoSize = true
+                };
+            }
+        }
+
         private void InitializeComponent()
         {
             this.SuspendLayout();
             this.Text = "HaloShift - Controller Mappings";
-            this.ClientSize = new Size(500, 800);
             this.FormBorderStyle = FormBorderStyle.None;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.StartPosition = FormStartPosition.CenterScreen;
-            this.BackColor = DarkBg;
+            this.BackColor = ContainerBg;
             this.MouseDown += Form_MouseDown;
             this.DoubleBuffered = true;
+            this.Padding = new Padding(2);
 
             // Set icon
             try
@@ -61,237 +157,332 @@ namespace HaloShift
             }
             catch { }
 
-            // Header Panel
-            var headerPanel = new Panel
+            int currentY = 0;
+
+            // Header
+            var header = CreateHeader();
+            header.Location = new Point(0, currentY);
+            this.Controls.Add(header);
+            currentY += header.Height;
+
+            // Mode Indicator
+            var modeIndicator = CreateModeIndicator();
+            modeIndicator.Location = new Point(ContentMargin, currentY + ContentMargin);
+            this.Controls.Add(modeIndicator);
+            currentY += modeIndicator.Height + ContentMargin + SectionGap;
+
+            // Content - 2x2 grid
+            int contentWidth = FormWidth - (ContentMargin * 2);
+            int sectionWidth = (contentWidth - SectionGap) / 2;
+
+            // Row 1: Button Mappings | Mouse Controls
+            var section1 = CreateSection("Button Mappings", new[]
             {
-                Location = new Point(0, 0),
-                Size = new Size(500, 50),
-                BackColor = Color.FromArgb(20, 20, 26)
-            };
-            headerPanel.Paint += (s, e) =>
+                ("🟨 Y", "Virtual Keyboard", AccentYellow),
+                ("🟦 X", "Escape", AccentBlue),
+                ("🟥 B", "Browser Back", AccentRed),
+                ("🟩 A", "Space / Confirm", AccentGreen)
+            }, sectionWidth);
+            section1.Location = new Point(ContentMargin, currentY);
+            this.Controls.Add(section1);
+
+            var section2 = CreateSection("Mouse Controls", new[]
             {
-                e.Graphics.DrawLine(new Pen(BorderColor, 1), 0, headerPanel.Height - 1,
-                    headerPanel.Width, headerPanel.Height - 1);
+                ("🕹️ Left Stick", "Cursor", AccentBlue),
+                ("🖱️ Left Click", "⊞ Windows", AccentBlue),
+                ("🕹️ Right Stick ↑", "Scroll Wheel", AccentBlue),
+                ("RT", "Left Click", AccentOrange)
+            }, sectionWidth);
+            section2.Location = new Point(ContentMargin + sectionWidth + SectionGap, currentY);
+            this.Controls.Add(section2);
+
+            int row1Height = Math.Max(section1.Height, section2.Height);
+            currentY += row1Height + SectionGap;
+
+            // Row 2: Triggers & Bumpers | Virtual Keyboard & Advanced
+            var section3 = CreateSection("Triggers & Bumpers", new[]
+            {
+                ("LT", "Right Click", AccentOrange),
+                ("LT + RT + X", "Middle Click", AccentBlue),
+                ("LT + RT + Y", "Mode Toggle", AccentYellow),
+                ("LT + RT + A", "Ctrl + W", AccentGreen)
+            }, sectionWidth);
+            section3.Location = new Point(ContentMargin, currentY);
+            this.Controls.Add(section3);
+
+            var section4 = CreateSection("Virtual Keyboard & Advanced", new[]
+            {
+                ("🎮 D-Pad", "Navigate Keys", AccentBlue),
+                ("A", "Select Key", AccentGreen),
+                ("X", "Backspace", AccentBlue),
+                ("B", "Close Keyboard", AccentRed),
+                ("LT + RT + B", "Alt + F4", AccentRed)
+            }, sectionWidth);
+            section4.Location = new Point(ContentMargin + sectionWidth + SectionGap, currentY);
+            this.Controls.Add(section4);
+
+            int row2Height = Math.Max(section3.Height, section4.Height);
+            currentY += row2Height + ContentMargin;
+
+            // Footer
+            var footer = CreateFooter();
+            footer.Location = new Point(0, currentY);
+            this.Controls.Add(footer);
+            currentY += footer.Height;
+
+            this.ClientSize = new Size(FormWidth, currentY);
+            this.Paint += DrawFormBorder;
+
+            this.ResumeLayout(false);
+        }
+
+        private Panel CreateHeader()
+        {
+            var header = new Panel
+            {
+                Size = new Size(FormWidth, 56),
+                BackColor = ContainerBg
             };
+            header.Paint += (s, e) =>
+            {
+                using var pen = new Pen(BorderAccent, 2);
+                e.Graphics.DrawLine(pen, 0, header.Height - 1, header.Width, header.Height - 1);
+            };
+            header.MouseDown += Form_MouseDown;
 
             var titleLabel = new Label
             {
                 Text = "HALOSHIFT",
-                Font = new Font("Segoe UI", 14, FontStyle.Bold),
+                Font = new Font("Segoe UI", 16, FontStyle.Bold),
                 AutoSize = true,
-                Location = new Point(20, 12),
+                Location = new Point(ContentMargin, 14),
                 ForeColor = TextPrimary,
                 Cursor = Cursors.SizeAll
             };
             titleLabel.MouseDown += Form_MouseDown;
-            headerPanel.Controls.Add(titleLabel);
+            header.Controls.Add(titleLabel);
+
+            var versionLabel = new Label
+            {
+                Text = AppVersion,
+                Font = new Font("Segoe UI", 10, FontStyle.Regular),
+                AutoSize = true,
+                Location = new Point(titleLabel.Right + 12, 20),
+                ForeColor = TextMuted
+            };
+            header.Controls.Add(versionLabel);
 
             var closeBtn = new Label
             {
                 Text = "✕",
-                Font = new Font("Segoe UI", 12),
+                Font = new Font("Segoe UI", 18, FontStyle.Regular),
                 AutoSize = true,
-                Location = new Point(465, 15),
-                ForeColor = TextTertiary,
+                Location = new Point(FormWidth - 40, 12),
+                ForeColor = TextMuted,
                 Cursor = Cursors.Hand
             };
             closeBtn.Click += (s, e) => this.Close();
-            closeBtn.MouseEnter += (s, e) => closeBtn.ForeColor = XboxRed;
-            closeBtn.MouseLeave += (s, e) => closeBtn.ForeColor = TextTertiary;
-            headerPanel.Controls.Add(closeBtn);
-            this.Controls.Add(headerPanel);
+            closeBtn.MouseEnter += (s, e) => closeBtn.ForeColor = TextPrimary;
+            closeBtn.MouseLeave += (s, e) => closeBtn.ForeColor = TextMuted;
+            header.Controls.Add(closeBtn);
 
-            _currentY = 65;
+            return header;
+        }
 
-            // Mode Status Card
-            AddModeCard();
+        private Panel CreateModeIndicator()
+        {
+            int width = FormWidth - (ContentMargin * 2);
+            var panel = new Panel
+            {
+                Size = new Size(width, 52),
+                BackColor = PanelBg
+            };
+            panel.Paint += (s, e) =>
+            {
+                using var pen = new Pen(BorderAccent, 1);
+                e.Graphics.DrawRectangle(pen, 0, 0, panel.Width - 1, panel.Height - 1);
+            };
 
-            // Sections
-            AddSectionTitle("BUTTON MAPPINGS");
-            AddButtonGroup("FACE BUTTONS", new[] {
-                ("Y (alone)", "Show Virtual Keyboard", XboxYellow),
-                ("X", "Escape", Color.FromArgb(100, 150, 255)),
-                ("B", "Browser Back", XboxRed),
-                ("A", "Space / Confirm", BrightGreen)
-            });
+            var flow = new FlowLayoutPanel
+            {
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                BackColor = Color.Transparent
+            };
 
-            AddSectionTitle("MOUSE CONTROLS");
-            AddButtonGroup("MOVEMENT & CLICKS", new[] {
-                ("Left Stick", "Cursor", Color.FromArgb(100, 200, 255)),
-                ("Left Click", "Windows Key", Color.FromArgb(100, 200, 255)),
-                ("Right Stick ↕", "Scroll Wheel", Color.FromArgb(100, 200, 255)),
-                ("RT", "Left Click", Color.FromArgb(200, 150, 100)),
-                ("LT", "Right Click", Color.FromArgb(200, 150, 100)),
-                ("LT + RT + X", "Middle Click", Color.FromArgb(200, 150, 100))
-            });
+            flow.Controls.Add(CreateHintText("Press"));
+            flow.Controls.Add(CreateButtonBadge("LB", AccentGreen, false));
+            flow.Controls.Add(CreateHintText("+"));
+            flow.Controls.Add(CreateButtonBadge("RB", AccentGreen, false));
+            flow.Controls.Add(CreateHintText("+"));
+            flow.Controls.Add(CreateButtonBadge("Y", AccentYellow, true));
+            flow.Controls.Add(CreateHintText("to toggle"));
 
-            AddSectionTitle("ADVANCED");
-            AddButtonGroup("COMBOS", new[] {
-                ("LB + RB + Y", "Mode Toggle", AccentGreen),
-                ("LT + RT + A", "Ctrl + W", XboxRed),
-                ("LT + RT + B", "Alt + F4", XboxRed)
-            });
+            panel.Controls.Add(flow);
+            panel.Layout += (s, e) =>
+            {
+                flow.Location = new Point((panel.Width - flow.Width) / 2, (panel.Height - flow.Height) / 2);
+            };
 
-            AddSectionTitle("VIRTUAL KEYBOARD");
-            AddButtonGroup("KEYBOARD CONTROLS", new[] {
-                ("D-Pad", "Navigate Keys", Color.FromArgb(150, 150, 255)),
-                ("A", "Select Key", BrightGreen),
-                ("X", "Backspace", Color.FromArgb(100, 150, 255)),
-                ("B", "Close Keyboard", XboxRed)
-            });
+            return panel;
+        }
 
-            // Footer
+        private Label CreateHintText(string text)
+        {
+            return new Label
+            {
+                Text = text,
+                Font = new Font("Segoe UI", 13, FontStyle.Bold),
+                ForeColor = AccentGreen,
+                AutoSize = true,
+                Margin = new Padding(4, 4, 4, 0)
+            };
+        }
+
+        private Label CreateButtonBadge(string text, Color borderColor, bool filled)
+        {
+            var badge = new Label
+            {
+                Text = text,
+                Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                ForeColor = filled ? Color.FromArgb(32, 32, 32) : borderColor,
+                BackColor = filled ? borderColor : Color.FromArgb(34, 34, 34),
+                AutoSize = false,
+                Size = new Size(28, 28),
+                TextAlign = ContentAlignment.MiddleCenter,
+                Margin = new Padding(2, 2, 2, 0)
+            };
+            badge.Paint += (s, e) =>
+            {
+                using var pen = new Pen(borderColor, 2);
+                e.Graphics.DrawRectangle(pen, 1, 1, badge.Width - 3, badge.Height - 3);
+            };
+            return badge;
+        }
+
+        private Panel CreateSection(string title, (string input, string action, Color color)[] rows, int width)
+        {
+            int rowHeight = 32;
+            int titleHeight = 24;
+            int padding = 12;
+            int totalHeight = padding + titleHeight + (rows.Length * rowHeight) + padding;
+
+            var section = new Panel
+            {
+                Size = new Size(width, totalHeight),
+                BackColor = PanelBg
+            };
+            section.Paint += (s, e) =>
+            {
+                using var pen = new Pen(BorderSubtle, 1);
+                e.Graphics.DrawRectangle(pen, 0, 0, section.Width - 1, section.Height - 1);
+            };
+
+            var titleLabel = new Label
+            {
+                Text = title.ToUpperInvariant(),
+                Font = new Font("Segoe UI", 9, FontStyle.Bold),
+                ForeColor = TextMuted,
+                AutoSize = true,
+                Location = new Point(padding, padding)
+            };
+            section.Controls.Add(titleLabel);
+
+            int y = padding + titleHeight;
+            for (int i = 0; i < rows.Length; i++)
+            {
+                var (input, action, color) = rows[i];
+                bool isLast = i == rows.Length - 1;
+
+                var rowPanel = new Panel
+                {
+                    Location = new Point(padding, y),
+                    Size = new Size(width - (padding * 2), rowHeight),
+                    BackColor = Color.Transparent
+                };
+
+                if (!isLast)
+                {
+                    rowPanel.Paint += (s, e) =>
+                    {
+                        using var pen = new Pen(Color.FromArgb(34, 34, 34), 1);
+                        e.Graphics.DrawLine(pen, 0, rowPanel.Height - 1, rowPanel.Width, rowPanel.Height - 1);
+                    };
+                }
+
+                var inputControl = CreateInputControl(input);
+                inputControl.Location = new Point(0, (rowHeight - inputControl.Height) / 2);
+                rowPanel.Controls.Add(inputControl);
+
+                var actionLabel = new Label
+                {
+                    Text = action,
+                    Font = new Font("Segoe UI", 11, FontStyle.Regular),
+                    ForeColor = TextSecondary,
+                    AutoSize = true
+                };
+                actionLabel.Location = new Point(rowPanel.Width - actionLabel.PreferredWidth, 6);
+                rowPanel.Controls.Add(actionLabel);
+
+                section.Controls.Add(rowPanel);
+                y += rowHeight;
+            }
+
+            return section;
+        }
+
+        private Panel CreateFooter()
+        {
+            var footer = new Panel
+            {
+                Size = new Size(FormWidth, 64),
+                BackColor = ContainerBg
+            };
+            footer.Paint += (s, e) =>
+            {
+                using var pen = new Pen(BorderSubtle, 1);
+                e.Graphics.DrawLine(pen, 0, 0, footer.Width, 0);
+            };
+
             var closeButton = new Button
             {
                 Text = "CLOSE",
+                Font = new Font("Segoe UI", 11, FontStyle.Bold),
                 Size = new Size(120, 40),
-                Location = new Point(190, _currentY + 20),
-                Font = new Font("Segoe UI", 10, FontStyle.Bold),
-                BackColor = AccentGreen,
-                ForeColor = TextPrimary,
+                BackColor = BorderAccent,
+                ForeColor = Color.FromArgb(13, 13, 13),
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand
             };
             closeButton.FlatAppearance.BorderSize = 0;
-            closeButton.MouseEnter += (s, e) => closeButton.BackColor = BrightGreen;
-            closeButton.MouseLeave += (s, e) => closeButton.BackColor = AccentGreen;
+            closeButton.MouseEnter += (s, e) => closeButton.BackColor = Color.FromArgb(51, 221, 51);
+            closeButton.MouseLeave += (s, e) => closeButton.BackColor = BorderAccent;
             closeButton.Click += (s, e) => this.Close();
-            this.Controls.Add(closeButton);
+            closeButton.Location = new Point((FormWidth - closeButton.Width) / 2, (footer.Height - closeButton.Height) / 2);
+            footer.Controls.Add(closeButton);
 
-            this.ClientSize = new Size(500, _currentY + 80);
-            this.ResumeLayout(false);
+            return footer;
         }
 
-        private void AddModeCard()
+        private void DrawFormBorder(object sender, PaintEventArgs e)
         {
-            var card = new Panel
-            {
-                Location = new Point(20, _currentY),
-                Size = new Size(460, 100),
-                BackColor = CardBg
-            };
-            card.Paint += (s, e) =>
-            {
-                e.Graphics.DrawRectangle(new Pen(AccentGreen, 2), 0, 0, card.Width - 1, card.Height - 1);
-            };
-
-            var modeLabel = new Label
-            {
-                Text = "⚡ CURRENT MODE",
-                Font = new Font("Segoe UI", 9, FontStyle.Bold),
-                AutoSize = true,
-                Location = new Point(12, 8),
-                ForeColor = TextTertiary
-            };
-            card.Controls.Add(modeLabel);
-
-            var activeMode = new Label
-            {
-                Text = "MOUSE MODE ACTIVE",
-                Font = new Font("Segoe UI", 16, FontStyle.Bold),
-                AutoSize = true,
-                Location = new Point(12, 26),
-                ForeColor = BrightGreen
-            };
-            card.Controls.Add(activeMode);
-
-            var toggleInfo = new Label
-            {
-                Text = "Press LB + RB + Y to toggle",
-                Font = new Font("Segoe UI", 8),
-                AutoSize = true,
-                Location = new Point(12, 60),
-                ForeColor = TextTertiary
-            };
-            card.Controls.Add(toggleInfo);
-
-            this.Controls.Add(card);
-            _currentY += 110;
+            using var pen = new Pen(BorderAccent, 2);
+            e.Graphics.DrawRectangle(pen, 1, 1, this.ClientSize.Width - 3, this.ClientSize.Height - 3);
         }
 
-        private void AddSectionTitle(string text)
+        private static string GetAssemblyVersion()
         {
-            var label = new Label
+            var asm = Assembly.GetExecutingAssembly();
+            var info = asm.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+            var version = info ?? asm.GetName().Version?.ToString() ?? "1.0.0.0";
+            int plusIndex = version.IndexOf('+');
+            if (plusIndex > 0)
             {
-                Text = text,
-                Font = new Font("Segoe UI", 10, FontStyle.Bold),
-                AutoSize = true,
-                Location = new Point(20, _currentY),
-                ForeColor = TextTertiary
-            };
-            this.Controls.Add(label);
-            _currentY += 28;
-        }
-
-        private void AddButtonGroup(string groupName, (string button, string action, Color color)[] mappings)
-        {
-            var groupPanel = new Panel
-            {
-                Location = new Point(20, _currentY),
-                Size = new Size(460, mappings.Length * 38 + 16),
-                BackColor = CardBg
-            };
-            groupPanel.Paint += (s, e) =>
-            {
-                e.Graphics.DrawRectangle(new Pen(BorderColor, 1), 0, 0, groupPanel.Width - 1, groupPanel.Height - 1);
-            };
-
-            int groupY = 10;
-            foreach (var (button, action, color) in mappings)
-            {
-                AddMappingItem(groupPanel, button, action, color, groupY);
-                groupY += 38;
+                version = version[..plusIndex];
             }
-
-            this.Controls.Add(groupPanel);
-            _currentY += groupPanel.Height + 12;
-        }
-
-        private void AddMappingItem(Panel parent, string button, string action, Color buttonColor, int y)
-        {
-            // Button indicator circle
-            var buttonCircle = new Label
-            {
-                Text = "●",
-                Font = new Font("Arial", 14),
-                AutoSize = true,
-                Location = new Point(12, y + 2),
-                ForeColor = buttonColor
-            };
-            parent.Controls.Add(buttonCircle);
-
-            // Button name
-            var buttonLabel = new Label
-            {
-                Text = button,
-                Font = new Font("Segoe UI", 11, FontStyle.Bold),
-                AutoSize = true,
-                Location = new Point(35, y + 3),
-                ForeColor = TextPrimary
-            };
-            parent.Controls.Add(buttonLabel);
-
-            // Arrow separator
-            var arrow = new Label
-            {
-                Text = "→",
-                Font = new Font("Segoe UI", 10),
-                AutoSize = true,
-                Location = new Point(180, y + 4),
-                ForeColor = BorderColor
-            };
-            parent.Controls.Add(arrow);
-
-            // Action
-            var actionLabel = new Label
-            {
-                Text = action,
-                Font = new Font("Segoe UI", 10),
-                AutoSize = true,
-                Location = new Point(210, y + 4),
-                ForeColor = TextSecondary
-            };
-            parent.Controls.Add(actionLabel);
+            return version;
         }
 
         private void Form_MouseDown(object sender, MouseEventArgs e)

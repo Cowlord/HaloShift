@@ -13,6 +13,7 @@ namespace HaloShift
         private ModeManager _modeManager;
         private Timer _updateTimer;
         private NotifyIcon _notifyIcon;
+        private ControlsWindow _controlsWindow;
         private MediaPlayer _activateSound;
         private MediaPlayer _deactivateSound;
         private SensitivityOverlay _sensitivityOverlay;
@@ -131,12 +132,11 @@ namespace HaloShift
             contextMenu.Items.Add("Exit", null, (s, e) => this.Close());
 
             _notifyIcon.ContextMenuStrip = contextMenu;
-            _notifyIcon.MouseClick += (s, e) =>
+            _notifyIcon.MouseDoubleClick += (s, e) =>
             {
                 if (e.Button == MouseButtons.Left)
                 {
-                    ShowWindow(this.Handle, SW_RESTORE);
-                    SetForegroundWindow(this.Handle);
+                    ShowControlsWindow();
                 }
             };
         }
@@ -315,8 +315,20 @@ namespace HaloShift
 
         private void ShowControlsWindow()
         {
-            var controlsWindow = new ControlsWindow();
-            controlsWindow.ShowDialog();
+            // Ensure only one instance of ControlsWindow is created
+            if (_controlsWindow == null || _controlsWindow.IsDisposed)
+            {
+                _controlsWindow = new ControlsWindow();
+                _controlsWindow.FormClosed += (s, e) => _controlsWindow = null;
+            }
+
+            if (!_controlsWindow.Visible)
+            {
+                _controlsWindow.Show();
+            }
+
+            _controlsWindow.BringToFront();
+            _controlsWindow.Activate();
         }
 
         protected override void OnResize(EventArgs e)
