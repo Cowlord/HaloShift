@@ -16,6 +16,7 @@ namespace HaloShift
         private MediaPlayer _activateSound;
         private MediaPlayer _deactivateSound;
         private SensitivityOverlay _sensitivityOverlay;
+        private VirtualKeyboard _virtualKeyboard;
 
         [DllImport("user32.dll")]
         private static extern bool SetForegroundWindow(IntPtr hWnd);
@@ -46,9 +47,11 @@ namespace HaloShift
             SetupUpdateTimer();
             LoadSounds();
             SetupSensitivityOverlay();
+            SetupVirtualKeyboard();
 
             _modeManager.ModeChanged += ModeManager_ModeChanged;
             _modeManager.SensitivityChanged += ModeManager_SensitivityChanged;
+            _modeManager.ShowKeyboardRequested += ModeManager_ShowKeyboardRequested;
         }
 
         private void InitializeComponent()
@@ -123,6 +126,7 @@ namespace HaloShift
             var contextMenu = new ContextMenuStrip();
             contextMenu.Items.Add("Show Controls", null, (s, e) => ShowControlsWindow());
             contextMenu.Items.Add("Toggle Mode", null, (s, e) => _modeManager.SwitchMode());
+            contextMenu.Items.Add("Show Keyboard", null, (s, e) => _virtualKeyboard?.ShowKeyboard());
             contextMenu.Items.Add("-");
             contextMenu.Items.Add("Exit", null, (s, e) => this.Close());
 
@@ -153,6 +157,13 @@ namespace HaloShift
             _controllerManager.Update();
             var currentState = _controllerManager.GetCurrentState();
 
+            // If virtual keyboard is visible, handle its input and skip other processing
+            if (_virtualKeyboard?.Visible == true)
+            {
+                _virtualKeyboard.HandleInput(currentState);
+                return;
+            }
+
             // Update mode based on input
             _modeManager.Update(currentState);
 
@@ -166,6 +177,11 @@ namespace HaloShift
         private void ModeManager_SensitivityChanged(object sender, SensitivityChangedEventArgs e)
         {
             _sensitivityOverlay?.ShowValue(e.NewSensitivity);
+        }
+
+        private void ModeManager_ShowKeyboardRequested(object sender, EventArgs e)
+        {
+            _virtualKeyboard?.ShowKeyboard();
         }
 
         private void ModeManager_ModeChanged(object sender, ModeChangedEventArgs e)
@@ -278,6 +294,7 @@ namespace HaloShift
             _notifyIcon?.Dispose();
             _modeManager = null;
             _sensitivityOverlay?.Dispose();
+            _virtualKeyboard?.Dispose();
 
             base.OnFormClosing(e);
         }
@@ -285,6 +302,15 @@ namespace HaloShift
         private void SetupSensitivityOverlay()
         {
             _sensitivityOverlay = new SensitivityOverlay();
+        }
+
+        private void SetupVirtualKeyboard()
+        {
+            _virtualKeyboard = new VirtualKeyboard();
+            _virtualKeyboard.KeyboardClosed += (s, e) =>
+            {
+                // Keyboard was closed, resume normal operation
+            };
         }
 
         private void ShowControlsWindow()

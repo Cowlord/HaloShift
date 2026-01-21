@@ -18,6 +18,8 @@
     <EmbeddedResource Include="AppIcon.ico" />
     <EmbeddedResource Include="sound_activate.wav" />
     <EmbeddedResource Include="sound_deactivate.wav" />
+    <EmbeddedResource Include="sound_boop.wav" />
+    <EmbeddedResource Include="sound_glitch.wav" />
   </ItemGroup>
 
 </Project>

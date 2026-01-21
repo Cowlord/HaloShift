@@ -16,6 +16,7 @@ namespace HaloShift
 
         public event EventHandler<ModeChangedEventArgs> ModeChanged;
         public event EventHandler<SensitivityChangedEventArgs> SensitivityChanged;
+        public event EventHandler ShowKeyboardRequested;
 
         private const float TRIGGER_THRESHOLD = 0.5f; // Normalized: 0.0 to 1.0
         private bool _toggleButtonWasPressed = false;
@@ -29,6 +30,7 @@ namespace HaloShift
         private bool _leftStickWasPressed = false;
         private bool _dpadUpWasPressed = false;
         private bool _dpadDownWasPressed = false;
+        private bool _yButtonWasPressed = false;
 
         // Sensitivity settings
         private float _mouseSensitivity = 1.0f;
@@ -53,6 +55,14 @@ namespace HaloShift
             }
 
             _toggleButtonWasPressed = allThreePressed;
+
+            // Check for Y button alone (show keyboard) - only in Mouse mode
+            bool yAlone = y && !lb && !rb;
+            if (yAlone && !_yButtonWasPressed && _currentMode == AppMode.Mouse)
+            {
+                ShowKeyboardRequested?.Invoke(this, EventArgs.Empty);
+            }
+            _yButtonWasPressed = yAlone;
         }
 
         public void SwitchMode()
