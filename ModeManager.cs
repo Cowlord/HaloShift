@@ -74,16 +74,20 @@ namespace HaloShift
             // Right Stick → scroll wheel
             HandleRightStickScroll(gamepad);
 
-            // RT → left click
+            // Trigger states (shared for clicks and combos)
+            float ltTrigger = gamepad.LeftTrigger / 255f;
             float rtTrigger = gamepad.RightTrigger / 255f;
-            if (rtTrigger > TRIGGER_THRESHOLD)
+            bool ltPressed = ltTrigger > TRIGGER_THRESHOLD;
+            bool rtPressed = rtTrigger > TRIGGER_THRESHOLD;
+
+            // RT → left click (only when LT is not also down)
+            if (rtPressed && !ltPressed)
             {
                 InputSimulator.LeftClick();
             }
 
-            // LT → right click
-            float ltTrigger = gamepad.LeftTrigger / 255f;
-            if (ltTrigger > TRIGGER_THRESHOLD)
+            // LT → right click (only when RT is not also down)
+            if (ltPressed && !rtPressed)
             {
                 InputSimulator.RightClick();
             }
@@ -97,12 +101,6 @@ namespace HaloShift
             bool a = (gamepad.Buttons & GamepadButtonFlags.A) != 0;
             bool rightStickClick = (gamepad.Buttons & GamepadButtonFlags.RightThumb) != 0;
             bool leftStickClick = (gamepad.Buttons & GamepadButtonFlags.LeftThumb) != 0;
-
-            // Get trigger states
-            float ltTrigger2 = gamepad.LeftTrigger / 255f;
-            float rtTrigger2 = gamepad.RightTrigger / 255f;
-            bool ltPressed = ltTrigger2 > TRIGGER_THRESHOLD;
-            bool rtPressed = rtTrigger2 > TRIGGER_THRESHOLD;
 
             // Get D-Pad states
             bool dpadUp = (gamepad.Buttons & GamepadButtonFlags.DPadUp) != 0;
