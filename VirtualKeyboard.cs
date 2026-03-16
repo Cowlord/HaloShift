@@ -4,6 +4,7 @@ using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using System.Media;
+using System.IO;
 using SharpDX.XInput;
 
 namespace HaloShift
@@ -269,7 +270,7 @@ namespace HaloShift
             // Backspace button
             _backspaceButton = new Button
             {
-                Text = "⌫ BACKSPACE (X)",
+                Text = "⌫ BACKSPACE",
                 Location = new Point(20, 330),
                 Size = new Size(200, 50),
                 Font = new Font("Segoe UI", 12, FontStyle.Bold),
@@ -277,11 +278,14 @@ namespace HaloShift
                 BackColor = Color.FromArgb(240, CardBg.R, CardBg.G, CardBg.B),
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand,
+                ImageAlign = ContentAlignment.MiddleRight,
+                TextImageRelation = TextImageRelation.TextBeforeImage,
                 TabStop = false // Prevent Windows keyboard focus
             };
             _backspaceButton.FlatAppearance.BorderColor = BorderColor;
             _backspaceButton.FlatAppearance.BorderSize = 2;
             _backspaceButton.Click += (s, e) => Backspace();
+            ApplyButtonIndicatorImage(_backspaceButton, "X");
             _backspaceButton.Paint += (s, e) =>
             {
                 var btn = s as Button;
@@ -295,7 +299,7 @@ namespace HaloShift
             // Cancel button (B)
             _cancelButton = new Button
             {
-                Text = "✕ CANCEL (B)",
+                Text = "✕ CANCEL",
                 Location = new Point(400, 330),
                 Size = new Size(200, 50),
                 Font = new Font("Segoe UI", 12, FontStyle.Bold),
@@ -303,17 +307,20 @@ namespace HaloShift
                 BackColor = Color.FromArgb(240, 201, 43, 36), // Xbox Red with opacity
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand,
+                ImageAlign = ContentAlignment.MiddleRight,
+                TextImageRelation = TextImageRelation.TextBeforeImage,
                 TabStop = false // Prevent Windows keyboard focus
             };
             _cancelButton.FlatAppearance.BorderColor = Color.FromArgb(220, 60, 50);
             _cancelButton.FlatAppearance.BorderSize = 2;
             _cancelButton.Click += (s, e) => CloseKeyboard();
+            ApplyButtonIndicatorImage(_cancelButton, "B");
             this.Controls.Add(_cancelButton);
 
             // Done button
             _doneButton = new Button
             {
-                Text = "✓ DONE (A)",
+                Text = "✓ DONE",
                 Location = new Point(780, 330),
                 Size = new Size(200, 50),
                 Font = new Font("Segoe UI", 12, FontStyle.Bold),
@@ -321,12 +328,56 @@ namespace HaloShift
                 BackColor = Color.FromArgb(240, AccentGreen.R, AccentGreen.G, AccentGreen.B),
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand,
+                ImageAlign = ContentAlignment.MiddleRight,
+                TextImageRelation = TextImageRelation.TextBeforeImage,
                 TabStop = false // Prevent Windows keyboard focus
             };
             _doneButton.FlatAppearance.BorderColor = BrightGreen;
             _doneButton.FlatAppearance.BorderSize = 2;
             _doneButton.Click += (s, e) => CloseKeyboard();
+            ApplyButtonIndicatorImage(_doneButton, "A");
             this.Controls.Add(_doneButton);
+        }
+
+        private void ApplyButtonIndicatorImage(Button button, string indicator)
+        {
+            var image = LoadButtonIndicatorImage(indicator);
+            if (image == null)
+            {
+                return;
+            }
+
+            button.Image = image;
+            button.Padding = new Padding(0, 0, 10, 0);
+        }
+
+        private Image LoadButtonIndicatorImage(string button)
+        {
+            try
+            {
+                string fileName = $"{button}_button.png";
+                string[] candidatePaths = new[]
+                {
+                    Path.Combine(AppContext.BaseDirectory, "assets", fileName),
+                    Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "assets", fileName),
+                    Path.Combine(Application.StartupPath, "assets", fileName)
+                };
+
+                foreach (var path in candidatePaths)
+                {
+                    string fullPath = Path.GetFullPath(path);
+                    if (File.Exists(fullPath))
+                    {
+                        return Image.FromFile(fullPath);
+                    }
+                }
+            }
+            catch
+            {
+                // Keep text-only button when image loading fails.
+            }
+
+            return null;
         }
 
         private void CreateKeyRow(int rowIndex, string keys, int startX, int keyWidth, int keyHeight, int keySpacing, int panelWidth)

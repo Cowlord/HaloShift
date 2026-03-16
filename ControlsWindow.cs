@@ -4,6 +4,7 @@ using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using System.Reflection;
+using System.IO;
 
 namespace HaloShift
 {
@@ -341,8 +342,24 @@ namespace HaloShift
             };
         }
 
-        private Label CreateButtonBadge(string text, Color borderColor, bool filled)
+        private Control CreateButtonBadge(string text, Color borderColor, bool filled)
         {
+            if (text == "A" || text == "B" || text == "X" || text == "Y")
+            {
+                var buttonImage = LoadButtonIndicatorImage(text);
+                if (buttonImage != null)
+                {
+                    return new PictureBox
+                    {
+                        Image = buttonImage,
+                        Size = new Size(28, 28),
+                        SizeMode = PictureBoxSizeMode.Zoom,
+                        BackColor = Color.Transparent,
+                        Margin = new Padding(2, 2, 2, 0)
+                    };
+                }
+            }
+
             var badge = new Label
             {
                 Text = text,
@@ -360,6 +377,35 @@ namespace HaloShift
                 e.Graphics.DrawRectangle(pen, 1, 1, badge.Width - 3, badge.Height - 3);
             };
             return badge;
+        }
+
+        private Image LoadButtonIndicatorImage(string button)
+        {
+            try
+            {
+                string fileName = $"{button}_button.png";
+                string[] candidatePaths = new[]
+                {
+                    Path.Combine(AppContext.BaseDirectory, "assets", fileName),
+                    Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "assets", fileName),
+                    Path.Combine(Application.StartupPath, "assets", fileName)
+                };
+
+                foreach (var path in candidatePaths)
+                {
+                    string fullPath = Path.GetFullPath(path);
+                    if (File.Exists(fullPath))
+                    {
+                        return Image.FromFile(fullPath);
+                    }
+                }
+            }
+            catch
+            {
+                // Fall back to text badge if image cannot be loaded.
+            }
+
+            return null;
         }
 
         private Panel CreateSection(string title, (string input, string action, Color color)[] rows, int width)
