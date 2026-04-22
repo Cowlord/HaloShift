@@ -3,6 +3,7 @@ using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using System.Drawing;
 using System.Windows.Media;
+using System.Media;
 using DrawingColor = System.Drawing.Color;
 
 namespace HaloShift
@@ -14,8 +15,8 @@ namespace HaloShift
         private Timer _updateTimer;
         private NotifyIcon _notifyIcon;
         private ControlsWindow _controlsWindow;
-        private MediaPlayer _activateSound;
-        private MediaPlayer _deactivateSound;
+        private SoundPlayer _activateSound;
+        private SoundPlayer _deactivateSound;
         private SensitivityOverlay _sensitivityOverlay;
         private VirtualKeyboard _virtualKeyboard;
 
@@ -206,6 +207,9 @@ namespace HaloShift
                 // Play deactivation sound
                 PlayDeactivationSound();
 
+                // Hide the virtual keyboard when switching back to controller mode
+                _virtualKeyboard?.Hide();
+
                 // Completely hide the window
                 this.Visible = false;
                 this.WindowState = FormWindowState.Minimized;
@@ -230,32 +234,16 @@ namespace HaloShift
                 var activateStream = assembly.GetManifestResourceStream("HaloShift.sound_activate.wav");
                 if (activateStream != null)
                 {
-                    var tempActivate = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "haloshift_activate.wav");
-                    using (var fileStream = System.IO.File.Create(tempActivate))
-                    {
-                        activateStream.CopyTo(fileStream);
-                    }
-                    activateStream.Dispose();
-
-                    _activateSound = new MediaPlayer();
-                    _activateSound.Open(new Uri(tempActivate));
-                    _activateSound.Volume = 0.7;
+                    _activateSound = new SoundPlayer(activateStream);
+                    _activateSound.Load();
                 }
 
                 // Load deactivation sound from embedded resource
                 var deactivateStream = assembly.GetManifestResourceStream("HaloShift.sound_deactivate.wav");
                 if (deactivateStream != null)
                 {
-                    var tempDeactivate = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "haloshift_deactivate.wav");
-                    using (var fileStream = System.IO.File.Create(tempDeactivate))
-                    {
-                        deactivateStream.CopyTo(fileStream);
-                    }
-                    deactivateStream.Dispose();
-
-                    _deactivateSound = new MediaPlayer();
-                    _deactivateSound.Open(new Uri(tempDeactivate));
-                    _deactivateSound.Volume = 0.7;
+                    _deactivateSound = new SoundPlayer(deactivateStream);
+                    _deactivateSound.Load();
                 }
             }
             catch { }
@@ -267,7 +255,6 @@ namespace HaloShift
             {
                 if (_activateSound != null)
                 {
-                    _activateSound.Position = TimeSpan.Zero;
                     _activateSound.Play();
                 }
             }
@@ -280,7 +267,6 @@ namespace HaloShift
             {
                 if (_deactivateSound != null)
                 {
-                    _deactivateSound.Position = TimeSpan.Zero;
                     _deactivateSound.Play();
                 }
             }
