@@ -32,7 +32,7 @@
 ### ✅ Core Functionality
 - [x] Xbox controller input polling via XInput
 - [x] Dual-mode system (Controller Mode & Mouse Mode)
-- [x] Mode toggling via LB + RB + Y combination
+- [x] Mode toggling via Share button
 - [x] Mode-specific behavior (foreground/minimize)
 
 ### ✅ Mouse Mode Features
@@ -82,7 +82,7 @@
 | RT Trigger | Left Click | SendInput mouse event when >50% pressure |
 | LT Trigger | Right Click | SendInput mouse event when >50% pressure |
 | LB Button | F11 Key | Direct key press event |
-| LB + RB + Y | Mode Toggle | Simultaneous frame detection |
+| Share | Mode Toggle | Single button press |
 
 ### Platform Support
 - OS: Windows 7, 8, 10, 11 (x86, x64)
@@ -168,7 +168,7 @@ bin/Debug/net6.0-windows/HaloShift.exe
 ### First Run
 1. App starts minimized in system tray
 2. Click tray icon or use context menu
-3. Use LB + RB + Y to toggle to Mouse Mode
+3. Use **Share** button to toggle to Mouse Mode
 4. Test controls in any application
 
 ### Configuration

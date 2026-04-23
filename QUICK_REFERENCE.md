@@ -12,7 +12,7 @@ dotnet run
 ## Control Mapping
 
 ### Mode Toggle
-**LB + RB + Y** (simultaneous press) → Switch between modes
+**Share** (single press) → Switch between modes
 
 ### Mouse Mode Controls
 | Control | Action |

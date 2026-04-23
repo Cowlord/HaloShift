@@ -10,7 +10,7 @@ HaloShift is a high-performance C# Windows Forms application that enables Xbox c
 - **Mouse Mode**: App takes foreground focus, controller drives mouse and keyboard
 
 ### ✅ Mode Toggle Mechanism
-- **LB + RB + Y**: Simultaneous button press triggers mode switch
+- **Share**: Single button press triggers mode switch
 - Smooth state transitions with visual feedback
 - System tray icon indicates current mode
 

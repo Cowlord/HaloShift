@@ -34,7 +34,7 @@ That's it! The app starts and appears in your system tray.
 
 | Action | Control |
 |--------|---------|
-| **Toggle Modes** | Hold LB + RB + Y together |
+| **Toggle Modes** | Press **Share** |
 | **Move Mouse** | Left stick (in Mouse Mode) |
 | **Left Click** | RT trigger (in Mouse Mode) |
 | **Right Click** | LT trigger (in Mouse Mode) |
@@ -92,12 +92,12 @@ Start with one of these based on what you need:
 - [ ] Connect Xbox controller to PC
 - [ ] Run HaloShift.exe
 - [ ] Look for tray icon (bottom right)
-- [ ] Press **LB + RB + Y** to toggle to Mouse Mode
+- [ ] Press **Share** to toggle to Mouse Mode
 - [ ] Move left stick - cursor should move smoothly
 - [ ] Press **RT** - should perform left click
 - [ ] Press **LT** - should perform right click
 - [ ] Press **LB** - should send F11 key
-- [ ] Press **LB + RB + Y** again to return to Controller Mode
+- [ ] Press **Share** again to return to Controller Mode
 
 ---
 

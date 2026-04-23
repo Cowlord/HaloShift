@@ -9,7 +9,7 @@ A high-performance C# application that runs in the background and listens for Xb
 - **Mouse Mode**: App takes foreground, controller drives mouse and keyboard inputs
 
 ### Mode Switching
-- Press **LB + RB + Y** simultaneously to toggle between modes
+- Press **Share** button to toggle between modes
 - Smooth transition with visual feedback in system tray
 
 ### Mouse Mode Controls

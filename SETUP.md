@@ -52,7 +52,7 @@
    - Check if controller is detected (no console errors)
 
 2. **Mode Toggle**
-   - Press and hold LB + RB + Y simultaneously
+   - Press and hold **Share** button
    - Verify window appears/disappears
    - Check tray icon tooltip changes
 

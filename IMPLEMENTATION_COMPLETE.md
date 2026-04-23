@@ -72,7 +72,7 @@ A complete, production-ready C# Windows Forms application has been designed and 
 ## ✨ Features Implemented
 
 ### 🎮 Mode Switching
-- **Trigger**: LB + RB + Y simultaneous press
+- **Trigger**: Share button press
 - **Transition**: Smooth with visual feedback
 - **Mouse Mode**: App takes foreground focus
 - **Controller Mode**: App minimizes, input passes through
@@ -201,7 +201,7 @@ HaloShift.exe
 ### Core Features
 - ✅ Xbox controller input detection
 - ✅ Dual-mode switching (Controller/Mouse)
-- ✅ LB + RB + Y toggle detection
+- ✅ Share button toggle detection
 - ✅ Left stick mouse movement with acceleration
 - ✅ RT trigger left click
 - ✅ LT trigger right click
@@ -297,10 +297,10 @@ The architecture supports:
 
 ### First Run
 1. App appears in system tray
-2. Press LB + RB + Y to enter Mouse Mode
+2. Press **Share** to enter Mouse Mode
 3. Test left stick movement
 4. Test triggers and buttons
-5. Press LB + RB + Y to return to Controller Mode
+5. Press **Share** to return to Controller Mode
 
 ### Customization
 1. Edit constants in `.cs` files

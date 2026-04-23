@@ -41,7 +41,7 @@ bin/Release/net6.0-windows/HaloShift.exe
 ```
 
 ### Basic Controls
-- **LB + RB + Y** → Toggle Mouse/Controller Mode
+- **Share** → Toggle Mouse/Controller Mode
 - **Left Stick** → Move mouse (in Mouse Mode)
 - **RT** → Left click
 - **LT** → Right click
@@ -99,7 +99,7 @@ HaloShift/
 | RT Trigger | Left click |
 | LT Trigger | Right click |
 | LB Button | F11 key (full-screen toggle) |
-| LB + RB + Y | Mode toggle |
+| Share | Mode toggle |
 
 ### ⚡ Performance
 - **Update Rate**: 60 FPS
@@ -221,7 +221,7 @@ if ((gamepad.Buttons & GamepadButtonFlags.A) != 0)
 - [ ] App recognizes controller input
 
 ✅ Mode Switching
-- [ ] LB + RB + Y toggles mode
+- [ ] **Share** toggles mode
 - [ ] Visual feedback updates
 
 ✅ Mouse Mode
@@ -302,7 +302,7 @@ See [QUICK_REFERENCE.md](QUICK_REFERENCE.md) for more troubleshooting.
 
 1. **Build the project**: `dotnet build -c Release`
 2. **Run the app**: `HaloShift.exe` or `dotnet run`
-3. **Test controls**: Press LB + RB + Y to toggle modes
+3. **Test controls**: Press **Share** to toggle modes
 4. **Customize**: Edit constants in source files for your preferences
 5. **Deploy**: Share the Release build executable with .NET 6.0 runtime
 
