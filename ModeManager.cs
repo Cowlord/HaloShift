@@ -33,7 +33,7 @@ namespace HaloShift
         private bool _yButtonWasPressed = false;
 
         // Sensitivity settings
-        private float _mouseSensitivity = 1.0f;
+        private float _mouseSensitivity = 0.5f;
         private const float MIN_SENSITIVITY = 0.5f;
         private const float MAX_SENSITIVITY = 3.0f;
         private const float SENSITIVITY_STEP = 0.1f;
