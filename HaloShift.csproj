@@ -9,7 +9,7 @@
     <AssemblyName>HaloShift</AssemblyName>
     <UseWPF>true</UseWPF>
     <!-- Single source of truth for app version -->
-    <VersionPrefix>1.2.10.0</VersionPrefix>
+    <VersionPrefix>1.3.0.0</VersionPrefix>
     <Version>$(VersionPrefix)</Version>
     <AssemblyVersion>$(VersionPrefix)</AssemblyVersion>
     <FileVersion>$(VersionPrefix)</FileVersion>

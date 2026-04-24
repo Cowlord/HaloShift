@@ -4,7 +4,6 @@ using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using System.Media;
-using System.IO;
 using SharpDX.XInput;
 
 namespace HaloShift
@@ -44,23 +43,38 @@ namespace HaloShift
         private static readonly Color TextSecondary = Color.FromArgb(191, 191, 191);
         private static readonly Color BorderColor = Color.FromArgb(55, 55, 60);
 
-        private readonly string[] _keyboardLayout = new[]
+        private const int KeyRowCount = 4;
+        private const int SpecialKeyCount = 5;
+
+        /// <summary>Virtual row index for Shift, Caps, Space, Enter, and Delete (not a string row).</summary>
+        private const int SpecialRowIndex = KeyRowCount;
+
+        private readonly string[] _keyboardLayoutAlpha = new[]
         {
             "1234567890",
             "QWERTYUIOP",
             "ASDFGHJKL",
-            "ZXCVBNM",
-            "SPECIAL"  // Special keys row (SHIFT, SPACE, CAPS, etc.)
+            "ZXCVBNM"
         };
+
+        /// <summary>Same geometry as alpha rows; toggled with Left Bumper while the keyboard is open.</summary>
+        private readonly string[] _keyboardLayoutSymbol = new[]
+        {
+            "!@#$%^&*()",
+            "[]{}|\\/_~*",
+            "+-=_:;',.",
+            "@,./?!~"
+        };
+
+        private bool _symbolLayer;
 
         private int _currentRow = 0;
         private int _currentCol = 0;
         private int _specialKeyIndex = 0; // For navigating special keys row
         private bool _firstInputFrame = true; // Skip first input to prevent immediate navigation
         private Panel _keyboardPanel;
-        private Button _doneButton;
-        private Button _cancelButton;
-        private Button _backspaceButton;
+        private Button _deleteButton;
+        private Button _returnButton;
         private Button _shiftButton;
         private Button _capsLockButton;
         private Label _spaceBarLabel;
@@ -77,6 +91,7 @@ namespace HaloShift
         private bool _downPressed = false;
         private bool _enterPressed = false;
         private bool _escPressed = false;
+        private bool _lbPressed = false;
 
         public event EventHandler KeyboardClosed;
 
@@ -155,8 +170,8 @@ namespace HaloShift
             this.Controls.Add(_keyboardPanel);
 
             // Create key layout with special keys integrated
-            int maxCols = 12; // Accommodate special keys
-            _keyLabels = new Label[_keyboardLayout.Length, maxCols];
+            int maxCols = 12;
+            _keyLabels = new Label[KeyRowCount, maxCols];
 
             int keyWidth = 60;
             int keyHeight = 50;
@@ -164,10 +179,10 @@ namespace HaloShift
             int panelWidth = 960;
 
             // Row 0: Numbers
-            CreateKeyRow(0, _keyboardLayout[0], 0, keyWidth, keyHeight, keySpacing, panelWidth);
+            CreateKeyRow(0, _keyboardLayoutAlpha[0], 0, keyWidth, keyHeight, keySpacing, panelWidth);
 
             // Row 1: QWERTYUIOP
-            CreateKeyRow(1, _keyboardLayout[1], 0, keyWidth, keyHeight, keySpacing, panelWidth);
+            CreateKeyRow(1, _keyboardLayoutAlpha[1], 0, keyWidth, keyHeight, keySpacing, panelWidth);
 
             // Row 2: CAPS + ASDFGHJKL
             int row2Y = 2 * (keyHeight + keySpacing);
@@ -198,7 +213,7 @@ namespace HaloShift
             };
             _keyboardPanel.Controls.Add(_capsLockButton);
 
-            CreateKeyRow(2, _keyboardLayout[2], 98, keyWidth, keyHeight, keySpacing, panelWidth);
+            CreateKeyRow(2, _keyboardLayoutAlpha[2], 98, keyWidth, keyHeight, keySpacing, panelWidth);
 
             // Row 3: SHIFT + ZXCVBNM
             int row3Y = 3 * (keyHeight + keySpacing);
@@ -229,9 +244,9 @@ namespace HaloShift
             };
             _keyboardPanel.Controls.Add(_shiftButton);
 
-            CreateKeyRow(3, _keyboardLayout[3], 118, keyWidth, keyHeight, keySpacing, panelWidth);
+            CreateKeyRow(3, _keyboardLayoutAlpha[3], 118, keyWidth, keyHeight, keySpacing, panelWidth);
 
-            // Row 4: Special keys (Shift, Space, Caps, Backspace)
+            // Row 4: Special keys (Shift, Caps, Space, Enter, Delete)
             // These are handled separately in navigation logic
             int row4Y = 4 * (keyHeight + keySpacing);
 
@@ -267,26 +282,22 @@ namespace HaloShift
             };
             _keyboardPanel.Controls.Add(_spaceBarLabel);
 
-            // Backspace button
-            _backspaceButton = new Button
+            _returnButton = new Button
             {
-                Text = "⌫ BACKSPACE",
-                Location = new Point(20, 330),
-                Size = new Size(200, 50),
+                Text = "ENTER",
+                Location = new Point(690, row4Y),
+                Size = new Size(120, keyHeight),
                 Font = new Font("Segoe UI", 12, FontStyle.Bold),
                 ForeColor = TextPrimary,
                 BackColor = Color.FromArgb(240, CardBg.R, CardBg.G, CardBg.B),
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand,
-                ImageAlign = ContentAlignment.MiddleRight,
-                TextImageRelation = TextImageRelation.TextBeforeImage,
                 TabStop = false // Prevent Windows keyboard focus
             };
-            _backspaceButton.FlatAppearance.BorderColor = BorderColor;
-            _backspaceButton.FlatAppearance.BorderSize = 2;
-            _backspaceButton.Click += (s, e) => Backspace();
-            ApplyButtonIndicatorImage(_backspaceButton, "X");
-            _backspaceButton.Paint += (s, e) =>
+            _returnButton.FlatAppearance.BorderColor = BorderColor;
+            _returnButton.FlatAppearance.BorderSize = 2;
+            _returnButton.Click += (s, e) => ReturnKey();
+            _returnButton.Paint += (s, e) =>
             {
                 var btn = s as Button;
                 bool isSelected = btn.BackColor.R == SelectedColor.R &&
@@ -294,90 +305,32 @@ namespace HaloShift
                                  btn.BackColor.B == SelectedColor.B;
                 btn.FlatAppearance.BorderColor = isSelected ? BrightGreen : BorderColor;
             };
-            this.Controls.Add(_backspaceButton);
+            _keyboardPanel.Controls.Add(_returnButton);
 
-            // Cancel button (B)
-            _cancelButton = new Button
+            _deleteButton = new Button
             {
-                Text = "✕ CANCEL",
-                Location = new Point(400, 330),
-                Size = new Size(200, 50),
+                Text = "DEL",
+                Location = new Point(820, row4Y),
+                Size = new Size(120, keyHeight),
                 Font = new Font("Segoe UI", 12, FontStyle.Bold),
                 ForeColor = TextPrimary,
-                BackColor = Color.FromArgb(240, 201, 43, 36), // Xbox Red with opacity
+                BackColor = Color.FromArgb(240, CardBg.R, CardBg.G, CardBg.B),
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand,
-                ImageAlign = ContentAlignment.MiddleRight,
-                TextImageRelation = TextImageRelation.TextBeforeImage,
                 TabStop = false // Prevent Windows keyboard focus
             };
-            _cancelButton.FlatAppearance.BorderColor = Color.FromArgb(220, 60, 50);
-            _cancelButton.FlatAppearance.BorderSize = 2;
-            _cancelButton.Click += (s, e) => CloseKeyboard();
-            ApplyButtonIndicatorImage(_cancelButton, "B");
-            this.Controls.Add(_cancelButton);
-
-            // Done button
-            _doneButton = new Button
+            _deleteButton.FlatAppearance.BorderColor = BorderColor;
+            _deleteButton.FlatAppearance.BorderSize = 2;
+            _deleteButton.Click += (s, e) => Backspace();
+            _deleteButton.Paint += (s, e) =>
             {
-                Text = "✓ DONE",
-                Location = new Point(780, 330),
-                Size = new Size(200, 50),
-                Font = new Font("Segoe UI", 12, FontStyle.Bold),
-                ForeColor = TextPrimary,
-                BackColor = Color.FromArgb(240, AccentGreen.R, AccentGreen.G, AccentGreen.B),
-                FlatStyle = FlatStyle.Flat,
-                Cursor = Cursors.Hand,
-                ImageAlign = ContentAlignment.MiddleRight,
-                TextImageRelation = TextImageRelation.TextBeforeImage,
-                TabStop = false // Prevent Windows keyboard focus
+                var btn = s as Button;
+                bool isSelected = btn.BackColor.R == SelectedColor.R &&
+                                 btn.BackColor.G == SelectedColor.G &&
+                                 btn.BackColor.B == SelectedColor.B;
+                btn.FlatAppearance.BorderColor = isSelected ? BrightGreen : BorderColor;
             };
-            _doneButton.FlatAppearance.BorderColor = BrightGreen;
-            _doneButton.FlatAppearance.BorderSize = 2;
-            _doneButton.Click += (s, e) => CloseKeyboard();
-            ApplyButtonIndicatorImage(_doneButton, "A");
-            this.Controls.Add(_doneButton);
-        }
-
-        private void ApplyButtonIndicatorImage(Button button, string indicator)
-        {
-            var image = LoadButtonIndicatorImage(indicator);
-            if (image == null)
-            {
-                return;
-            }
-
-            button.Image = image;
-            button.Padding = new Padding(0, 0, 10, 0);
-        }
-
-        private Image LoadButtonIndicatorImage(string button)
-        {
-            try
-            {
-                string fileName = $"{button}_button.png";
-                string[] candidatePaths = new[]
-                {
-                    Path.Combine(AppContext.BaseDirectory, "assets", fileName),
-                    Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "assets", fileName),
-                    Path.Combine(Application.StartupPath, "assets", fileName)
-                };
-
-                foreach (var path in candidatePaths)
-                {
-                    string fullPath = Path.GetFullPath(path);
-                    if (File.Exists(fullPath))
-                    {
-                        return Image.FromFile(fullPath);
-                    }
-                }
-            }
-            catch
-            {
-                // Keep text-only button when image loading fails.
-            }
-
-            return null;
+            _keyboardPanel.Controls.Add(_deleteButton);
         }
 
         private void CreateKeyRow(int rowIndex, string keys, int startX, int keyWidth, int keyHeight, int keySpacing, int panelWidth)
@@ -447,6 +400,56 @@ namespace HaloShift
             }
         }
 
+        private string GetKeyRow(int row) =>
+            _symbolLayer ? _keyboardLayoutSymbol[row] : _keyboardLayoutAlpha[row];
+
+        private void ApplyActiveKeyLayoutToLabels()
+        {
+            for (int row = 0; row < KeyRowCount; row++)
+            {
+                string keys = GetKeyRow(row);
+                for (int col = 0; col < keys.Length; col++)
+                {
+                    if (_keyLabels[row, col] != null)
+                    {
+                        char c = keys[col];
+                        _keyLabels[row, col].Tag = c;
+                        _keyLabels[row, col].Text = c.ToString();
+                    }
+                }
+            }
+
+            UpdateKeyLabels();
+        }
+
+        private void ToggleSymbolLayer()
+        {
+            _shiftActive = false;
+            _symbolLayer = !_symbolLayer;
+            UpdateShiftButton();
+            ApplyActiveKeyLayoutToLabels();
+            UpdateSelection(false);
+            PlayNavigationSound();
+        }
+
+        private static int MapColumnToSpecialKey(int column)
+        {
+            if (column < 2) return 0; // Shift
+            if (column < 4) return 1; // Caps
+            if (column < 7) return 2; // Space
+            if (column < 9) return 3; // Enter
+            return 4;                 // Delete
+        }
+
+        private static int MapSpecialKeyToColumn(int specialIndex)
+        {
+            if (specialIndex == 0) return 0;
+            if (specialIndex == 1) return 2;
+            if (specialIndex == 2) return 5;
+            if (specialIndex == 3) return 7;
+            return 9;
+        }
+
         public void HandleInput(Gamepad gamepad)
         {
             // D-pad navigation
@@ -457,6 +460,7 @@ namespace HaloShift
             bool aButton = (gamepad.Buttons & GamepadButtonFlags.A) != 0;
             bool bButton = (gamepad.Buttons & GamepadButtonFlags.B) != 0;
             bool xButton = (gamepad.Buttons & GamepadButtonFlags.X) != 0;
+            bool lbButton = (gamepad.Buttons & GamepadButtonFlags.LeftShoulder) != 0;
 
             // Controller-only inputs (keyboard is handled separately by KeyboardTimer_Tick)
             bool moveUp = dpadUp;
@@ -480,9 +484,17 @@ namespace HaloShift
                 _buttonStates["select"] = select;
                 _buttonStates["cancel"] = cancel;
                 _buttonStates["backspace"] = backspace;
+                _lbPressed = lbButton;
                 _firstInputFrame = false;
                 return;
             }
+
+            // Toggle symbols / letters (Left Bumper)
+            if (lbButton && !_lbPressed)
+            {
+                ToggleSymbolLayer();
+            }
+            _lbPressed = lbButton;
 
             // Move Up
             if (moveUp && !_buttonStates["moveUp"])
@@ -491,25 +503,21 @@ namespace HaloShift
                 {
                     _currentRow--;
                     // Adjust column/special key index if needed
-                    if (_currentRow == 4) // Special row
+                    if (_currentRow == SpecialRowIndex) // Special row
                     {
-                        _specialKeyIndex = Math.Min(_specialKeyIndex, 3); // 4 special keys: Shift, Caps, Space, Backspace
+                        _specialKeyIndex = Math.Min(_specialKeyIndex, SpecialKeyCount - 1);
                     }
                     else
                     {
-                        int maxCol = _keyboardLayout[_currentRow].Length - 1;
+                        int maxCol = GetKeyRow(_currentRow).Length - 1;
                         if (_currentCol > maxCol) _currentCol = maxCol;
                     }
                     UpdateSelection(true);
                 }
                 else if (_currentRow == 0) // From row 0, wrap to special row 4
                 {
-                    _currentRow = 4;
-                    // Map column to special key index
-                    if (_currentCol < 3) _specialKeyIndex = 0;
-                    else if (_currentCol < 6) _specialKeyIndex = 1;
-                    else if (_currentCol < 9) _specialKeyIndex = 2;
-                    else _specialKeyIndex = 3;
+                    _currentRow = SpecialRowIndex;
+                    _specialKeyIndex = MapColumnToSpecialKey(_currentCol);
                     UpdateSelection(true);
                 }
             }
@@ -518,42 +526,34 @@ namespace HaloShift
             // Move Down
             if (moveDown && !_buttonStates["moveDown"])
             {
-                if (_currentRow < _keyboardLayout.Length - 1)
+                if (_currentRow < SpecialRowIndex)
                 {
                     // Special handling for row 3 (ZXCVBNM) - C/V/B/N/M go to SPACE
                     if (_currentRow == 3 && _currentCol >= 2 && _currentCol <= 6) // C, V, B, N, M
                     {
-                        _currentRow = 4;
+                        _currentRow = SpecialRowIndex;
                         _specialKeyIndex = 2; // Space
                     }
                     else
                     {
                         _currentRow++;
                         // Adjust column/special key index if needed
-                        if (_currentRow == 4) // Special row
+                        if (_currentRow == SpecialRowIndex) // Special row
                         {
-                            // Map column to special key index
-                            if (_currentCol < 3) _specialKeyIndex = 0; // Shift
-                            else if (_currentCol < 6) _specialKeyIndex = 1; // Caps
-                            else if (_currentCol < 9) _specialKeyIndex = 2; // Space
-                            else _specialKeyIndex = 3; // Backspace
+                            _specialKeyIndex = MapColumnToSpecialKey(_currentCol);
                         }
                         else
                         {
-                            int maxCol = _keyboardLayout[_currentRow].Length - 1;
+                            int maxCol = GetKeyRow(_currentRow).Length - 1;
                             if (_currentCol > maxCol) _currentCol = maxCol;
                         }
                     }
                     UpdateSelection(true);
                 }
-                else if (_currentRow == 4) // From special row, wrap to row 0
+                else if (_currentRow == SpecialRowIndex) // From special row, wrap to row 0
                 {
                     _currentRow = 0;
-                    // Map special key index to approximate column position
-                    if (_specialKeyIndex == 0) _currentCol = 0;
-                    else if (_specialKeyIndex == 1) _currentCol = 3;
-                    else if (_specialKeyIndex == 2) _currentCol = 5;
-                    else _currentCol = 9;
+                    _currentCol = MapSpecialKeyToColumn(_specialKeyIndex);
                     UpdateSelection(true);
                 }
             }
@@ -562,35 +562,27 @@ namespace HaloShift
             // Move Left
             if (moveLeft && !_buttonStates["moveLeft"])
             {
-                if (_currentRow == 4) // Special row
+                if (_currentRow == SpecialRowIndex) // Special row
                 {
-                    if (_specialKeyIndex == 0) // From SHIFT, go to 'M' (end of row 3)
-                    {
-                        _currentRow = 3;
-                        _currentCol = _keyboardLayout[3].Length - 1;
-                        UpdateSelection(true);
-                    }
-                    else if (_specialKeyIndex == 1) // From CAPS, go to 'L' (end of row 2)
-                    {
-                        _currentRow = 2;
-                        _currentCol = _keyboardLayout[2].Length - 1;
-                        UpdateSelection(true);
-                    }
-                    else if (_specialKeyIndex > 1)
+                    if (_specialKeyIndex > 0)
                     {
                         _specialKeyIndex--;
-                        UpdateSelection(true);
                     }
+                    else
+                    {
+                        _specialKeyIndex = SpecialKeyCount - 1;
+                    }
+                    UpdateSelection(true);
                 }
                 else if (_currentRow == 2 && _currentCol == 0) // From 'A', go to CAPS button
                 {
-                    _currentRow = 4;
+                    _currentRow = SpecialRowIndex;
                     _specialKeyIndex = 1; // Caps
                     UpdateSelection(true);
                 }
                 else if (_currentRow == 3 && _currentCol == 0) // From 'Z', go to SHIFT button
                 {
-                    _currentRow = 4;
+                    _currentRow = SpecialRowIndex;
                     _specialKeyIndex = 0; // Shift
                     UpdateSelection(true);
                 }
@@ -603,7 +595,7 @@ namespace HaloShift
                     else
                     {
                         // Wrap to end of row
-                        _currentCol = _keyboardLayout[_currentRow].Length - 1;
+                        _currentCol = GetKeyRow(_currentRow).Length - 1;
                     }
                     UpdateSelection(true);
                 }
@@ -613,39 +605,29 @@ namespace HaloShift
             // Move Right
             if (moveRight && !_buttonStates["moveRight"])
             {
-                if (_currentRow == 4) // Special row
+                if (_currentRow == SpecialRowIndex) // Special row
                 {
-                    if (_specialKeyIndex == 0) // From SHIFT, go to 'Z'
-                    {
-                        _currentRow = 3;
-                        _currentCol = 0;
-                    }
-                    else if (_specialKeyIndex == 1) // From CAPS, go to 'A'
-                    {
-                        _currentRow = 2;
-                        _currentCol = 0;
-                    }
-                    else if (_specialKeyIndex < 3) // Move right in special row
+                    if (_specialKeyIndex < SpecialKeyCount - 1) // Move right in special row
                     {
                         _specialKeyIndex++;
                     }
                     else
                     {
-                        // Wrap from Backspace to Shift
+                        // Wrap from Delete to Shift
                         _specialKeyIndex = 0;
                     }
                     UpdateSelection(true);
                 }
                 else
                 {
-                    int maxCol = _keyboardLayout[_currentRow].Length - 1;
+                    int maxCol = GetKeyRow(_currentRow).Length - 1;
                     if (_currentCol < maxCol)
                     {
                         _currentCol++;
                     }
                     else if (_currentRow == 2) // From 'L', go to CAPS button
                     {
-                        _currentRow = 4;
+                        _currentRow = SpecialRowIndex;
                         _specialKeyIndex = 1; // Caps
                     }
                     else
@@ -693,33 +675,29 @@ namespace HaloShift
             // Left arrow - edge detection
             if (leftNow && !_leftPressed)
             {
-                if (_currentRow == 4) // Special row
+                if (_currentRow == SpecialRowIndex) // Special row
                 {
-                    if (_specialKeyIndex == 0) // From SHIFT, go to 'M'
-                    {
-                        _currentRow = 3; _currentCol = _keyboardLayout[3].Length - 1; UpdateSelection(true);
-                    }
-                    else if (_specialKeyIndex == 1) // From CAPS, go to 'L'
-                    {
-                        _currentRow = 2; _currentCol = _keyboardLayout[2].Length - 1; UpdateSelection(true);
-                    }
-                    else if (_specialKeyIndex > 1)
+                    if (_specialKeyIndex > 0)
                     {
                         _specialKeyIndex--; UpdateSelection(true);
+                    }
+                    else
+                    {
+                        _specialKeyIndex = SpecialKeyCount - 1; UpdateSelection(true);
                     }
                 }
                 else if (_currentRow == 2 && _currentCol == 0) // From 'A', go to CAPS
                 {
-                    _currentRow = 4; _specialKeyIndex = 1; UpdateSelection(true);
+                    _currentRow = SpecialRowIndex; _specialKeyIndex = 1; UpdateSelection(true);
                 }
                 else if (_currentRow == 3 && _currentCol == 0) // From 'Z', go to SHIFT
                 {
-                    _currentRow = 4; _specialKeyIndex = 0; UpdateSelection(true);
+                    _currentRow = SpecialRowIndex; _specialKeyIndex = 0; UpdateSelection(true);
                 }
                 else
                 {
                     if (_currentCol > 0) { _currentCol--; }
-                    else { _currentCol = _keyboardLayout[_currentRow].Length - 1; } // Wrap to end
+                    else { _currentCol = GetKeyRow(_currentRow).Length - 1; } // Wrap to end
                     UpdateSelection(true);
                 }
             }
@@ -728,18 +706,16 @@ namespace HaloShift
             // Right arrow - edge detection
             if (rightNow && !_rightPressed)
             {
-                if (_currentRow == 4) // Special row
+                if (_currentRow == SpecialRowIndex) // Special row
                 {
-                    if (_specialKeyIndex == 0) { _currentRow = 3; _currentCol = 0; UpdateSelection(true); }
-                    else if (_specialKeyIndex == 1) { _currentRow = 2; _currentCol = 0; UpdateSelection(true); }
-                    else if (_specialKeyIndex < 3) { _specialKeyIndex++; UpdateSelection(true); }
+                    if (_specialKeyIndex < SpecialKeyCount - 1) { _specialKeyIndex++; UpdateSelection(true); }
                     else { _specialKeyIndex = 0; UpdateSelection(true); }
                 }
                 else
                 {
-                    int maxCol = _keyboardLayout[_currentRow].Length - 1;
+                    int maxCol = GetKeyRow(_currentRow).Length - 1;
                     if (_currentCol < maxCol) { _currentCol++; }
-                    else if (_currentRow == 2) { _currentRow = 4; _specialKeyIndex = 1; }
+                    else if (_currentRow == 2) { _currentRow = SpecialRowIndex; _specialKeyIndex = 1; }
                     else { _currentCol = 0; }
                     UpdateSelection(true);
                 }
@@ -752,17 +728,14 @@ namespace HaloShift
                 if (_currentRow > 0)
                 {
                     _currentRow--;
-                    if (_currentRow == 4) _specialKeyIndex = Math.Min(_specialKeyIndex, 3);
-                    else { int maxCol = _keyboardLayout[_currentRow].Length - 1; if (_currentCol > maxCol) _currentCol = maxCol; }
+                    if (_currentRow == SpecialRowIndex) _specialKeyIndex = Math.Min(_specialKeyIndex, SpecialKeyCount - 1);
+                    else { int maxCol = GetKeyRow(_currentRow).Length - 1; if (_currentCol > maxCol) _currentCol = maxCol; }
                     UpdateSelection(true);
                 }
                 else if (_currentRow == 0) // From row 0, wrap to special row
                 {
-                    _currentRow = 4;
-                    if (_currentCol < 3) _specialKeyIndex = 0;
-                    else if (_currentCol < 6) _specialKeyIndex = 1;
-                    else if (_currentCol < 9) _specialKeyIndex = 2;
-                    else _specialKeyIndex = 3;
+                    _currentRow = SpecialRowIndex;
+                    _specialKeyIndex = MapColumnToSpecialKey(_currentCol);
                     UpdateSelection(true);
                 }
             }
@@ -771,28 +744,25 @@ namespace HaloShift
             // Down arrow - edge detection
             if (downNow && !_downPressed)
             {
-                if (_currentRow < _keyboardLayout.Length - 1)
+                if (_currentRow < SpecialRowIndex)
                 {
                     // From row 3 (ZXCVBNM), C/V/B/N/M go to SPACE
                     if (_currentRow == 3 && _currentCol >= 2 && _currentCol <= 6)
                     {
-                        _currentRow = 4; _specialKeyIndex = 2;
+                        _currentRow = SpecialRowIndex; _specialKeyIndex = 2;
                     }
                     else
                     {
                         _currentRow++;
-                        if (_currentRow == 4) { if (_currentCol < 3) _specialKeyIndex = 0; else if (_currentCol < 6) _specialKeyIndex = 1; else if (_currentCol < 9) _specialKeyIndex = 2; else _specialKeyIndex = 3; }
-                        else { int maxCol = _keyboardLayout[_currentRow].Length - 1; if (_currentCol > maxCol) _currentCol = maxCol; }
+                        if (_currentRow == SpecialRowIndex) { _specialKeyIndex = MapColumnToSpecialKey(_currentCol); }
+                        else { int maxCol = GetKeyRow(_currentRow).Length - 1; if (_currentCol > maxCol) _currentCol = maxCol; }
                     }
                     UpdateSelection(true);
                 }
-                else if (_currentRow == 4) // From special row, wrap to row 0
+                else if (_currentRow == SpecialRowIndex) // From special row, wrap to row 0
                 {
                     _currentRow = 0;
-                    if (_specialKeyIndex == 0) _currentCol = 0;
-                    else if (_specialKeyIndex == 1) _currentCol = 3;
-                    else if (_specialKeyIndex == 2) _currentCol = 5;
-                    else _currentCol = 9;
+                    _currentCol = MapSpecialKeyToColumn(_specialKeyIndex);
                     UpdateSelection(true);
                 }
             }
@@ -834,9 +804,9 @@ namespace HaloShift
         private void UpdateSelection(bool playSound = true)
         {
             // Reset all keys to default color
-            for (int row = 0; row < _keyboardLayout.Length - 1; row++) // Exclude special row
+            for (int row = 0; row < KeyRowCount; row++)
             {
-                for (int col = 0; col < _keyboardLayout[row].Length; col++)
+                for (int col = 0; col < GetKeyRow(row).Length; col++)
                 {
                     if (_keyLabels[row, col] != null)
                     {
@@ -866,14 +836,19 @@ namespace HaloShift
                 _spaceBarLabel.BackColor = Color.FromArgb(240, CardBg.R, CardBg.G, CardBg.B);
                 _spaceBarLabel.Invalidate();
             }
-            if (_backspaceButton != null)
+            if (_returnButton != null)
             {
-                _backspaceButton.BackColor = Color.FromArgb(240, CardBg.R, CardBg.G, CardBg.B);
-                _backspaceButton.Invalidate();
+                _returnButton.BackColor = Color.FromArgb(240, CardBg.R, CardBg.G, CardBg.B);
+                _returnButton.Invalidate();
+            }
+            if (_deleteButton != null)
+            {
+                _deleteButton.BackColor = Color.FromArgb(240, CardBg.R, CardBg.G, CardBg.B);
+                _deleteButton.Invalidate();
             }
 
             // Now highlight current selection
-            if (_currentRow == 4) // Special row - highlight the selected special key
+            if (_currentRow == SpecialRowIndex) // Special row - highlight the selected special key
             {
                 Control selectedControl = null;
                 switch (_specialKeyIndex)
@@ -881,7 +856,8 @@ namespace HaloShift
                     case 0: selectedControl = _shiftButton; break;
                     case 1: selectedControl = _capsLockButton; break;
                     case 2: selectedControl = _spaceBarLabel; break;
-                    case 3: selectedControl = _backspaceButton; break;
+                    case 3: selectedControl = _returnButton; break;
+                    case 4: selectedControl = _deleteButton; break;
                 }
                 if (selectedControl != null)
                 {
@@ -889,7 +865,7 @@ namespace HaloShift
                     selectedControl.Invalidate();
                 }
             }
-            else if (_currentRow < 4) // Regular key row
+            else if (_currentRow < SpecialRowIndex) // Regular key row
             {
                 if (_keyLabels[_currentRow, _currentCol] != null)
                 {
@@ -907,7 +883,7 @@ namespace HaloShift
 
         private void SelectCurrentKey()
         {
-            if (_currentRow == 4) // Special row
+            if (_currentRow == SpecialRowIndex) // Special row
             {
                 PlayKeyPressSound();
                 switch (_specialKeyIndex)
@@ -921,7 +897,10 @@ namespace HaloShift
                     case 2: // Space
                         SendKeyToSystem(' ');
                         break;
-                    case 3: // Backspace
+                    case 3: // Enter
+                        ReturnKey();
+                        break;
+                    case 4: // Delete
                         Backspace();
                         break;
                 }
@@ -990,6 +969,12 @@ namespace HaloShift
         {
             // Send backspace to the system
             InputSimulator.PressKey(0x08); // VK_BACK
+        }
+
+        private void ReturnKey()
+        {
+            // Send Enter to the system
+            InputSimulator.PressKey(0x0D); // VK_RETURN
         }
 
         private void ToggleShift()
@@ -1074,9 +1059,9 @@ namespace HaloShift
             // Update all letter keys to show uppercase or lowercase
             bool shouldBeUppercase = _shiftActive || _capsLockActive;
 
-            for (int row = 0; row < _keyboardLayout.Length; row++)
+            for (int row = 0; row < KeyRowCount; row++)
             {
-                for (int col = 0; col < _keyboardLayout[row].Length; col++)
+                for (int col = 0; col < GetKeyRow(row).Length; col++)
                 {
                     if (_keyLabels[row, col] != null)
                     {
@@ -1092,18 +1077,36 @@ namespace HaloShift
             }
         }
 
-        private void CloseKeyboard()
+        private void PerformClose()
         {
-            // Reset shift/caps state when closing
             _shiftActive = false;
             _capsLockActive = false;
+            _symbolLayer = false;
             UpdateShiftButton();
             UpdateCapsLockButton();
-            UpdateKeyLabels();
+            ApplyActiveKeyLayoutToLabels();
 
             KeyboardClosed?.Invoke(this, EventArgs.Empty);
             _keyboardTimer?.Stop();
-            this.Hide();
+            Hide();
+        }
+
+        private void CloseKeyboard()
+        {
+            PerformClose();
+        }
+
+        /// <summary>Closes the keyboard and attempts to return focus to the window that was active when the keyboard opened.</summary>
+        public void DismissRestoringPreviousFocus()
+        {
+            if (!Visible)
+                return;
+
+            IntPtr previous = _previousWindow;
+            PerformClose();
+
+            if (previous != IntPtr.Zero && previous != Handle)
+                SetForegroundWindow(previous);
         }
 
         public void ShowKeyboard()
@@ -1116,6 +1119,8 @@ namespace HaloShift
             _specialKeyIndex = 0;
             _shiftActive = false;
             _capsLockActive = false;
+            _symbolLayer = false;
+            _lbPressed = false;
             _firstInputFrame = true; // Reset first frame flag
 
             // Reset button states to prevent carryover from previous session

@@ -207,8 +207,8 @@ namespace HaloShift
                 // Play deactivation sound
                 PlayDeactivationSound();
 
-                // Hide the virtual keyboard when switching back to controller mode
-                _virtualKeyboard?.Hide();
+                // Close the virtual keyboard when switching back to controller mode and restore focus to the game
+                _virtualKeyboard?.DismissRestoringPreviousFocus();
 
                 // Completely hide the window
                 this.Visible = false;

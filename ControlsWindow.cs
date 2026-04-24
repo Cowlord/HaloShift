@@ -215,6 +215,7 @@ namespace HaloShift
             var section4 = CreateSection("Virtual Keyboard", new[]
             {
                 ("🎮 D-Pad", "Navigate keys", AccentBlue),
+                ("LB", "Symbols ↔ letters", AccentYellow),
                 ("A", "Select key", AccentGreen),
                 ("X", "Backspace", AccentBlue),
                 ("B", "Close keyboard", AccentRed)
