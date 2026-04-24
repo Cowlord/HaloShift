@@ -277,7 +277,24 @@ namespace HaloShift
         {
             _updateTimer?.Stop();
             _updateTimer?.Dispose();
+
+            if (_modeManager != null)
+            {
+                _modeManager.ModeChanged -= ModeManager_ModeChanged;
+                _modeManager.SensitivityChanged -= ModeManager_SensitivityChanged;
+                _modeManager.ShowKeyboardRequested -= ModeManager_ShowKeyboardRequested;
+                _modeManager.ReleaseHeldMouseButtons();
+            }
+
             _notifyIcon?.Dispose();
+
+            try
+            {
+                _activateSound?.Dispose();
+                _deactivateSound?.Dispose();
+            }
+            catch { }
+
             _modeManager = null;
             _sensitivityOverlay?.Dispose();
             _virtualKeyboard?.Dispose();
@@ -363,7 +380,8 @@ namespace HaloShift
             {
                 _label.Text = $"Sensitivity: {sensitivity:F1}";
 
-                var workArea = Screen.PrimaryScreen.WorkingArea;
+                var screen = Screen.FromPoint(Cursor.Position);
+                var workArea = screen.WorkingArea;
                 Location = new Point(
                     workArea.Left + (workArea.Width - Width) / 2,
                     workArea.Top + (int)(workArea.Height * 0.15));

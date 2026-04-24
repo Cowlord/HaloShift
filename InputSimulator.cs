@@ -1,10 +1,13 @@
 using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace HaloShift
 {
     public static class InputSimulator
     {
+        private static readonly int InputSize = Marshal.SizeOf(typeof(INPUT));
+
         [DllImport("user32.dll", SetLastError = true)]
         private static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
 
@@ -73,6 +76,19 @@ namespace HaloShift
         private const uint KEYEVENTF_KEYDOWN = 0x0000;
         private const uint KEYEVENTF_KEYUP = 0x0002;
 
+        private static void DispatchInputs(INPUT[] inputs)
+        {
+            if (inputs == null || inputs.Length == 0)
+                return;
+
+            uint sent = SendInput((uint)inputs.Length, inputs, InputSize);
+            if (sent != (uint)inputs.Length)
+            {
+                int err = Marshal.GetLastWin32Error();
+                Debug.WriteLine($"SendInput sent {sent} of {inputs.Length} inputs; Win32 error {err}.");
+            }
+        }
+
         public static void MoveMouse(int deltaX, int deltaY)
         {
             var input = new INPUT
@@ -92,7 +108,7 @@ namespace HaloShift
                 }
             };
 
-            SendInput(1, new[] { input }, Marshal.SizeOf(typeof(INPUT)));
+            DispatchInputs(new[] { input });
         }
 
         public static void LeftClick()
@@ -131,8 +147,49 @@ namespace HaloShift
                 }
             };
 
-            INPUT[] inputs = new[] { downInput, upInput };
-            SendInput(2, inputs, Marshal.SizeOf(typeof(INPUT)));
+            DispatchInputs(new[] { downInput, upInput });
+        }
+
+        public static void LeftMouseButtonDown()
+        {
+            var input = new INPUT
+            {
+                Type = INPUT_MOUSE,
+                U = new InputUnion
+                {
+                    mi = new MOUSEINPUT
+                    {
+                        dx = 0,
+                        dy = 0,
+                        mouseData = 0,
+                        dwFlags = MOUSEEVENTF_LEFTDOWN,
+                        time = 0,
+                        dwExtraInfo = IntPtr.Zero
+                    }
+                }
+            };
+            DispatchInputs(new[] { input });
+        }
+
+        public static void LeftMouseButtonUp()
+        {
+            var input = new INPUT
+            {
+                Type = INPUT_MOUSE,
+                U = new InputUnion
+                {
+                    mi = new MOUSEINPUT
+                    {
+                        dx = 0,
+                        dy = 0,
+                        mouseData = 0,
+                        dwFlags = MOUSEEVENTF_LEFTUP,
+                        time = 0,
+                        dwExtraInfo = IntPtr.Zero
+                    }
+                }
+            };
+            DispatchInputs(new[] { input });
         }
 
         public static void RightClick()
@@ -171,8 +228,49 @@ namespace HaloShift
                 }
             };
 
-            INPUT[] inputs = new[] { downInput, upInput };
-            SendInput(2, inputs, Marshal.SizeOf(typeof(INPUT)));
+            DispatchInputs(new[] { downInput, upInput });
+        }
+
+        public static void RightMouseButtonDown()
+        {
+            var input = new INPUT
+            {
+                Type = INPUT_MOUSE,
+                U = new InputUnion
+                {
+                    mi = new MOUSEINPUT
+                    {
+                        dx = 0,
+                        dy = 0,
+                        mouseData = 0,
+                        dwFlags = MOUSEEVENTF_RIGHTDOWN,
+                        time = 0,
+                        dwExtraInfo = IntPtr.Zero
+                    }
+                }
+            };
+            DispatchInputs(new[] { input });
+        }
+
+        public static void RightMouseButtonUp()
+        {
+            var input = new INPUT
+            {
+                Type = INPUT_MOUSE,
+                U = new InputUnion
+                {
+                    mi = new MOUSEINPUT
+                    {
+                        dx = 0,
+                        dy = 0,
+                        mouseData = 0,
+                        dwFlags = MOUSEEVENTF_RIGHTUP,
+                        time = 0,
+                        dwExtraInfo = IntPtr.Zero
+                    }
+                }
+            };
+            DispatchInputs(new[] { input });
         }
 
         public static void MiddleClick()
@@ -211,8 +309,7 @@ namespace HaloShift
                 }
             };
 
-            INPUT[] inputs = new[] { downInput, upInput };
-            SendInput(2, inputs, Marshal.SizeOf(typeof(INPUT)));
+            DispatchInputs(new[] { downInput, upInput });
         }
 
         public static void MouseWheel(int delta)
@@ -234,7 +331,7 @@ namespace HaloShift
                 }
             };
 
-            SendInput(1, new[] { input }, Marshal.SizeOf(typeof(INPUT)));
+            DispatchInputs(new[] { input });
         }
 
         public static void SendKey(byte keyCode, bool keyDown)
@@ -255,7 +352,7 @@ namespace HaloShift
                 }
             };
 
-            SendInput(1, new[] { input }, Marshal.SizeOf(typeof(INPUT)));
+            DispatchInputs(new[] { input });
         }
 
         public static void PressKey(byte keyCode)

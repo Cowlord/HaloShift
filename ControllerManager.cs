@@ -30,7 +30,9 @@ namespace HaloShift
                 state.LeftTrigger != _previousState.LeftTrigger ||
                 state.RightTrigger != _previousState.RightTrigger ||
                 state.LeftThumbX != _previousState.LeftThumbX ||
-                state.LeftThumbY != _previousState.LeftThumbY)
+                state.LeftThumbY != _previousState.LeftThumbY ||
+                state.RightThumbX != _previousState.RightThumbX ||
+                state.RightThumbY != _previousState.RightThumbY)
             {
                 StateChanged?.Invoke(this, new GamepadStateChangedEventArgs(state));
                 _previousState = state;

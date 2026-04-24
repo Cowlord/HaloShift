@@ -1,35 +1,19 @@
 using System;
+using System.Threading;
 using System.Windows.Forms;
-using System.Diagnostics;
-using HaloShift;
 
 namespace HaloShift
 {
     static class Program
     {
+        private const string SingleInstanceMutexName = @"Local\HaloShiftSingleInstance";
+
         [STAThread]
         static void Main()
         {
-            // Check for and close existing HaloShift processes
-            Process currentProcess = Process.GetCurrentProcess();
-            Process[] existingProcesses = Process.GetProcessesByName(currentProcess.ProcessName);
-
-            foreach (Process process in existingProcesses)
-            {
-                // Don't kill the current process
-                if (process.Id != currentProcess.Id)
-                {
-                    try
-                    {
-                        process.Kill();
-                        process.WaitForExit(2000); // Wait up to 2 seconds for graceful shutdown
-                    }
-                    catch
-                    {
-                        // Ignore errors if process already closed
-                    }
-                }
-            }
+            using var instanceMutex = new Mutex(true, SingleInstanceMutexName, out bool createdNew);
+            if (!createdNew)
+                return;
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);

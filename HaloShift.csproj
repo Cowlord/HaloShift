@@ -2,14 +2,14 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net6.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationIcon>AppIcon.ico</ApplicationIcon>
     <RootNamespace>HaloShift</RootNamespace>
     <AssemblyName>HaloShift</AssemblyName>
     <UseWPF>true</UseWPF>
     <!-- Single source of truth for app version -->
-    <VersionPrefix>1.2.9.0</VersionPrefix>
+    <VersionPrefix>1.2.10.0</VersionPrefix>
     <Version>$(VersionPrefix)</Version>
     <AssemblyVersion>$(VersionPrefix)</AssemblyVersion>
     <FileVersion>$(VersionPrefix)</FileVersion>

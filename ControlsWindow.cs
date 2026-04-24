@@ -189,10 +189,11 @@ namespace HaloShift
 
             var section2 = CreateSection("Mouse Controls", new[]
             {
-                ("🕹️ Left Stick", "Cursor", AccentBlue),
-                ("🖱️ Left Click", "⊞ Windows", AccentBlue),
-                ("🕹️ Right Stick ↑", "Scroll Wheel", AccentBlue),
-                ("RT", "Left Click", AccentOrange)
+                ("🕹️ Left Stick", "Move cursor", AccentBlue),
+                ("LS (click)", "Windows key", AccentBlue),
+                ("🕹️ Right Stick", "Scroll wheel", AccentBlue),
+                ("RT (hold)", "Left mouse button", AccentOrange),
+                ("LT (hold)", "Right mouse button", AccentOrange)
             }, sectionWidth);
             section2.Location = new Point(ContentMargin + sectionWidth + SectionGap, currentY);
             this.Controls.Add(section2);
@@ -203,21 +204,20 @@ namespace HaloShift
             // Row 2: Triggers & Bumpers | Virtual Keyboard & Advanced
             var section3 = CreateSection("Triggers & Bumpers", new[]
             {
-                ("LT", "Right Click", AccentOrange),
-                ("LT + RT + X", "Middle Click", AccentBlue),
-                ("LT + RT + Y", "Mode Toggle", AccentYellow),
-                ("LT + RT + A", "Ctrl + W", AccentGreen)
+                ("LT + RT + X", "Middle click", AccentBlue),
+                ("LB + RB + Y", "Mode toggle", AccentYellow),
+                ("LT + RT + A", "Ctrl + W", AccentGreen),
+                ("LT + RT + B", "Alt + F4", AccentRed)
             }, sectionWidth);
             section3.Location = new Point(ContentMargin, currentY);
             this.Controls.Add(section3);
 
-            var section4 = CreateSection("Virtual Keyboard & Advanced", new[]
+            var section4 = CreateSection("Virtual Keyboard", new[]
             {
-                ("🎮 D-Pad", "Navigate Keys", AccentBlue),
-                ("A", "Select Key", AccentGreen),
+                ("🎮 D-Pad", "Navigate keys", AccentBlue),
+                ("A", "Select key", AccentGreen),
                 ("X", "Backspace", AccentBlue),
-                ("B", "Close Keyboard", AccentRed),
-                ("LT + RT + B", "Alt + F4", AccentRed)
+                ("B", "Close keyboard", AccentRed)
             }, sectionWidth);
             section4.Location = new Point(ContentMargin + sectionWidth + SectionGap, currentY);
             this.Controls.Add(section4);

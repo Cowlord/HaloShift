@@ -9,13 +9,13 @@ A high-performance C# application that runs in the background and listens for Xb
 - **Mouse Mode**: App takes foreground, controller drives mouse and keyboard inputs
 
 ### Mode Switching
-- Press **Share** button to toggle between modes
+- Press **LB + RB + Y** together to toggle between modes
 - Smooth transition with visual feedback in system tray
 
 ### Mouse Mode Controls
 - **Left Stick**: Moves mouse cursor with smooth quadratic acceleration and deadzone
-- **RT (Right Trigger)**: Left click
-- **LT (Left Trigger)**: Right click
+- **RT (Right Trigger, hold)**: Left mouse button (press and hold to drag; release to let go)
+- **LT (Left Trigger, hold)**: Right mouse button (same hold/release behavior)
 - **LB (Left Bumper)**: Sends F11 keystroke (full-screen toggle)
 - **Y (alone)**: Opens Virtual Keyboard (for text input in games)
 - **D-Pad Up/Down**: Adjust mouse sensitivity
@@ -42,7 +42,7 @@ When in Mouse Mode, press **Y** to open a virtual on-screen keyboard that:
 - **Keyboard support**: Arrow keys work for testing (in addition to D-Pad)
 
 ### Technical Highlights
-- High-performance polling (~60 FPS) for responsive input handling
+- High-performance polling (~120 Hz update timer) for responsive input handling
 - Smooth acceleration curve for natural mouse movement
 - 15% deadzone on analog sticks
 - Quadratic acceleration function for precise control
@@ -51,8 +51,8 @@ When in Mouse Mode, press **Y** to open a virtual on-screen keyboard that:
 
 ## System Requirements
 
-- Windows 7 or later
-- .NET 6.0 runtime
+- Windows 10, version 1809 or later (required for .NET 8)
+- .NET 8.0 runtime (included when you use the self-contained publish output from this repo)
 - Xbox 360/Xbox One controller connected via USB or wireless adapter
 - Administrator privileges (recommended for best compatibility)
 
@@ -75,7 +75,7 @@ When in Mouse Mode, press **Y** to open a virtual on-screen keyboard that:
 ## Building from Source
 
 Prerequisites:
-- Visual Studio 2022 or .NET SDK 6.0+
+- Visual Studio 2022 or .NET SDK 8.0+
 - Windows development environment
 
 Build steps:
@@ -85,7 +85,7 @@ dotnet restore
 dotnet build -c Release
 ```
 
-Output executable: `bin/Release/net6.0-windows/HaloShift.exe`
+Output executable: `bin/Release/net8.0-windows/win-x64/publish/HaloShift.exe` (when publishing) or `bin/Release/net8.0-windows/HaloShift.exe` (framework-dependent build)
 
 ## System Tray Menu
 
@@ -100,9 +100,9 @@ Right-click or left-click the tray icon for:
 To customize the behavior, edit the following in the source code:
 
 ### Input Sensitivity
-In `ModeManager.cs`, adjust `SENSITIVITY`:
+In `ModeManager.cs`, adjust `BASE_SENSITIVITY` inside `HandleLeftStickMovement`:
 ```csharp
-const float SENSITIVITY = 15f; // Pixels per frame
+const float BASE_SENSITIVITY = 60f; // Scales cursor speed before user sensitivity multiplier
 ```
 
 ### Deadzone
@@ -120,14 +120,14 @@ const float TRIGGER_THRESHOLD = 0.5f; // 50% pressure
 ### Update Rate
 In `MainForm.cs`, adjust timer interval:
 ```csharp
-_updateTimer.Interval = 16; // Milliseconds (~60 FPS)
+_updateTimer.Interval = 8; // Milliseconds (~125 Hz)
 ```
 
 ## Architecture
 
 ### Main Components
 
-- **Program.cs**: Application entry point
+- **Program.cs**: Application entry point (single-instance mutex; second launch exits quietly)
 - **MainForm.cs**: Windows Forms window and system tray integration
 - **ControllerManager.cs**: Xbox controller input polling and state management
 - **ModeManager.cs**: Mode switching logic and input handling
@@ -141,7 +141,7 @@ _updateTimer.Interval = 16; // Milliseconds (~60 FPS)
 Manages Xbox controller connection and state polling via SharpDX.XInput
 - `Update()`: Polls current controller state
 - `GetCurrentState()`: Returns latest gamepad state
-- `StateChanged` event: Fired when controller input changes
+- `StateChanged` event: Fired when buttons, triggers, or either analog stick changes
 
 #### ModeManager
 Handles mode switching and mode-specific input processing
@@ -153,7 +153,7 @@ Handles mode switching and mode-specific input processing
 #### InputSimulator
 Uses Windows SendInput API for mouse and keyboard automation
 - `MoveMouse()`: Relative mouse movement
-- `LeftClick() / RightClick()`: Mouse clicks
+- `LeftClick() / RightClick()`: Full mouse click (down+up); triggers use `LeftMouseButtonDown`/`Up` and `RightMouseButtonDown`/`Up` for hold/drag
 - `PressKey()`: Keyboard key press (down + up)
 
 #### VirtualKeyboard
@@ -166,7 +166,7 @@ Topmost on-screen keyboard for text input in fullscreen games
 
 ## Performance Considerations
 
-- Update loop runs at ~60 FPS (16ms interval) for responsive input
+- Update loop uses an 8 ms timer (~125 Hz) for responsive input
 - Quadratic acceleration curve provides smooth but controlled movement
 - Analog stick deadzone (15%) prevents drift
 - Mouse position queries are minimal to reduce latency
@@ -202,5 +202,5 @@ Designed for personal use with Xbox controllers on Windows PC.
 ## Dependencies
 
 - SharpDX.XInput (4.2.0): Xbox controller input
-- .NET 6.0 Windows Forms: UI and windowing
+- .NET 8.0 Windows Forms: UI and windowing
 - Windows SendInput API: Input simulation

@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using SharpDX.XInput;
 
 namespace HaloShift
@@ -31,6 +32,9 @@ namespace HaloShift
         private bool _dpadUpWasPressed = false;
         private bool _dpadDownWasPressed = false;
         private bool _yButtonWasPressed = false;
+
+        private bool _prevWantLeftMouseDown;
+        private bool _prevWantRightMouseDown;
 
         // Sensitivity settings
         private float _mouseSensitivity = 0.5f;
@@ -71,8 +75,26 @@ namespace HaloShift
 
             if (_currentMode != newMode)
             {
+                if (newMode == AppMode.Controller)
+                    ReleaseHeldMouseButtons();
+
                 _currentMode = newMode;
                 ModeChanged?.Invoke(this, new ModeChangedEventArgs(newMode));
+            }
+        }
+
+        public void ReleaseHeldMouseButtons()
+        {
+            if (_prevWantLeftMouseDown)
+            {
+                InputSimulator.LeftMouseButtonUp();
+                _prevWantLeftMouseDown = false;
+            }
+
+            if (_prevWantRightMouseDown)
+            {
+                InputSimulator.RightMouseButtonUp();
+                _prevWantRightMouseDown = false;
             }
         }
 
@@ -90,17 +112,20 @@ namespace HaloShift
             bool ltPressed = ltTrigger > TRIGGER_THRESHOLD;
             bool rtPressed = rtTrigger > TRIGGER_THRESHOLD;
 
-            // RT → left click (only when LT is not also down)
-            if (rtPressed && !ltPressed)
-            {
-                InputSimulator.LeftClick();
-            }
+            bool wantLeftMouseDown = rtPressed && !ltPressed;
+            bool wantRightMouseDown = ltPressed && !rtPressed;
 
-            // LT → right click (only when RT is not also down)
-            if (ltPressed && !rtPressed)
-            {
-                InputSimulator.RightClick();
-            }
+            if (wantLeftMouseDown && !_prevWantLeftMouseDown)
+                InputSimulator.LeftMouseButtonDown();
+            else if (!wantLeftMouseDown && _prevWantLeftMouseDown)
+                InputSimulator.LeftMouseButtonUp();
+            _prevWantLeftMouseDown = wantLeftMouseDown;
+
+            if (wantRightMouseDown && !_prevWantRightMouseDown)
+                InputSimulator.RightMouseButtonDown();
+            else if (!wantRightMouseDown && _prevWantRightMouseDown)
+                InputSimulator.RightMouseButtonUp();
+            _prevWantRightMouseDown = wantRightMouseDown;
 
             // Get button states
             bool rb = (gamepad.Buttons & GamepadButtonFlags.RightShoulder) != 0;
@@ -115,8 +140,6 @@ namespace HaloShift
             // Get D-Pad states
             bool dpadUp = (gamepad.Buttons & GamepadButtonFlags.DPadUp) != 0;
             bool dpadDown = (gamepad.Buttons & GamepadButtonFlags.DPadDown) != 0;
-
-            float previousSensitivity = _mouseSensitivity;
 
             // D-Pad Up → Increase sensitivity
             if (dpadUp && !_dpadUpWasPressed)
@@ -162,15 +185,24 @@ namespace HaloShift
             bool altF4Combo = ltPressed && rtPressed && b;
             if (altF4Combo && !_altF4ComboWasPressed)
             {
-                // Send Alt+F4
-                InputSimulator.SendKey(0x12, true);  // Alt down
-                System.Threading.Thread.Sleep(10);
-                InputSimulator.SendKey(0x73, true);  // F4 down
-                System.Threading.Thread.Sleep(50);
-                InputSimulator.SendKey(0x73, false); // F4 up
-                System.Threading.Thread.Sleep(10);
-                InputSimulator.SendKey(0x12, false); // Alt up
-                System.Threading.Thread.Sleep(10);
+                _ = Task.Run(() =>
+                {
+                    try
+                    {
+                        InputSimulator.SendKey(0x12, true);  // Alt down
+                        System.Threading.Thread.Sleep(10);
+                        InputSimulator.SendKey(0x73, true);  // F4 down
+                        System.Threading.Thread.Sleep(50);
+                        InputSimulator.SendKey(0x73, false); // F4 up
+                        System.Threading.Thread.Sleep(10);
+                        InputSimulator.SendKey(0x12, false); // Alt up
+                        System.Threading.Thread.Sleep(10);
+                    }
+                    catch
+                    {
+                        // Ignore; combo is best-effort
+                    }
+                });
             }
             _altF4ComboWasPressed = altF4Combo;
 
@@ -178,15 +210,24 @@ namespace HaloShift
             bool ctrlWCombo = ltPressed && rtPressed && a;
             if (ctrlWCombo && !_ctrlWComboWasPressed)
             {
-                // Send Ctrl+W
-                InputSimulator.SendKey(0x11, true);  // Ctrl down
-                System.Threading.Thread.Sleep(10);
-                InputSimulator.SendKey(0x57, true);  // W down
-                System.Threading.Thread.Sleep(50);
-                InputSimulator.SendKey(0x57, false); // W up
-                System.Threading.Thread.Sleep(10);
-                InputSimulator.SendKey(0x11, false); // Ctrl up
-                System.Threading.Thread.Sleep(10);
+                _ = Task.Run(() =>
+                {
+                    try
+                    {
+                        InputSimulator.SendKey(0x11, true);  // Ctrl down
+                        System.Threading.Thread.Sleep(10);
+                        InputSimulator.SendKey(0x57, true);  // W down
+                        System.Threading.Thread.Sleep(50);
+                        InputSimulator.SendKey(0x57, false); // W up
+                        System.Threading.Thread.Sleep(10);
+                        InputSimulator.SendKey(0x11, false); // Ctrl up
+                        System.Threading.Thread.Sleep(10);
+                    }
+                    catch
+                    {
+                        // Ignore; combo is best-effort
+                    }
+                });
             }
             _ctrlWComboWasPressed = ctrlWCombo;
 
