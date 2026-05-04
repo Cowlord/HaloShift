@@ -10,6 +10,13 @@ namespace HaloShift
         Mouse
     }
 
+    /// <summary>Where a mode switch was initiated (used for tray-specific UX).</summary>
+    public enum ModeChangeInitiator
+    {
+        Gamepad,
+        UserMenu
+    }
+
     public class ModeManager
     {
         private AppMode _currentMode = AppMode.Controller;
@@ -55,7 +62,7 @@ namespace HaloShift
             // Only trigger toggle on the transition from unpressed to pressed
             if (allThreePressed && !_toggleButtonWasPressed)
             {
-                SwitchMode();
+                SwitchMode(ModeChangeInitiator.Gamepad);
             }
 
             _toggleButtonWasPressed = allThreePressed;
@@ -69,7 +76,7 @@ namespace HaloShift
             _yButtonWasPressed = yAlone;
         }
 
-        public void SwitchMode()
+        public void SwitchMode(ModeChangeInitiator initiator = ModeChangeInitiator.Gamepad)
         {
             AppMode newMode = _currentMode == AppMode.Controller ? AppMode.Mouse : AppMode.Controller;
 
@@ -79,7 +86,7 @@ namespace HaloShift
                     ReleaseHeldMouseButtons();
 
                 _currentMode = newMode;
-                ModeChanged?.Invoke(this, new ModeChangedEventArgs(newMode));
+                ModeChanged?.Invoke(this, new ModeChangedEventArgs(newMode, initiator));
             }
         }
 
@@ -98,15 +105,15 @@ namespace HaloShift
             }
         }
 
-        public bool HandleMouseModeInput(Gamepad gamepad)
+        /// <summary>
+        /// Sticks, scroll, and LT/RT mouse buttons only — safe to run while the virtual keyboard is open
+        /// (it owns face buttons, bumpers for typing, and D-pad navigation).
+        /// </summary>
+        public void HandleMouseModePointerInput(Gamepad gamepad)
         {
-            // Left Stick → move mouse
             HandleLeftStickMovement(gamepad);
-
-            // Right Stick → scroll wheel
             HandleRightStickScroll(gamepad);
 
-            // Trigger states (shared for clicks and combos)
             float ltTrigger = gamepad.LeftTrigger / 255f;
             float rtTrigger = gamepad.RightTrigger / 255f;
             bool ltPressed = ltTrigger > TRIGGER_THRESHOLD;
@@ -126,6 +133,17 @@ namespace HaloShift
             else if (!wantRightMouseDown && _prevWantRightMouseDown)
                 InputSimulator.RightMouseButtonUp();
             _prevWantRightMouseDown = wantRightMouseDown;
+        }
+
+        public bool HandleMouseModeInput(Gamepad gamepad)
+        {
+            HandleMouseModePointerInput(gamepad);
+
+            // Trigger states for combos below (same thresholds as pointer mapping)
+            float ltTrigger = gamepad.LeftTrigger / 255f;
+            float rtTrigger = gamepad.RightTrigger / 255f;
+            bool ltPressed = ltTrigger > TRIGGER_THRESHOLD;
+            bool rtPressed = rtTrigger > TRIGGER_THRESHOLD;
 
             // Get button states
             bool rb = (gamepad.Buttons & GamepadButtonFlags.RightShoulder) != 0;
@@ -341,9 +359,12 @@ namespace HaloShift
     {
         public AppMode NewMode { get; set; }
 
-        public ModeChangedEventArgs(AppMode newMode)
+        public ModeChangeInitiator Initiator { get; set; }
+
+        public ModeChangedEventArgs(AppMode newMode, ModeChangeInitiator initiator = ModeChangeInitiator.Gamepad)
         {
             NewMode = newMode;
+            Initiator = initiator;
         }
     }
 

@@ -5,7 +5,8 @@ namespace HaloShift
 {
     public class ControllerManager : IDisposable
     {
-        private Controller _controller;
+        private readonly Controller[] _controllers = new Controller[4];
+        private int _activeIndex;
         private Gamepad _previousState;
         private bool _disposed = false;
 
@@ -13,17 +14,37 @@ namespace HaloShift
 
         public ControllerManager()
         {
-            // Initialize the first controller (index 0)
-            _controller = new Controller(UserIndex.One);
+            for (int i = 0; i < 4; i++)
+                _controllers[i] = new Controller((UserIndex)i);
+
+            SelectFirstConnectedSlot();
             _previousState = new Gamepad();
+        }
+
+        private Controller Active => _controllers[_activeIndex];
+
+        /// <summary>Selects the lowest-index XInput slot that has a controller connected.</summary>
+        private void SelectFirstConnectedSlot()
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                if (_controllers[i].IsConnected)
+                {
+                    _activeIndex = i;
+                    return;
+                }
+            }
         }
 
         public void Update()
         {
-            if (_controller?.IsConnected != true)
+            if (!Active.IsConnected)
+                SelectFirstConnectedSlot();
+
+            if (!Active.IsConnected)
                 return;
 
-            var state = _controller.GetState().Gamepad;
+            var state = Active.GetState().Gamepad;
 
             // Check if state changed
             if (state.Buttons != _previousState.Buttons ||
@@ -41,10 +62,28 @@ namespace HaloShift
 
         public Gamepad GetCurrentState()
         {
-            return _controller?.IsConnected == true ? _controller.GetState().Gamepad : _previousState;
+            if (!Active.IsConnected)
+                SelectFirstConnectedSlot();
+
+            if (!Active.IsConnected)
+                return _previousState;
+
+            return Active.GetState().Gamepad;
         }
 
-        public bool IsConnected => _controller?.IsConnected == true;
+        public bool IsConnected
+        {
+            get
+            {
+                for (int i = 0; i < 4; i++)
+                {
+                    if (_controllers[i].IsConnected)
+                        return true;
+                }
+
+                return false;
+            }
+        }
 
         public void Dispose()
         {

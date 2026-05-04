@@ -127,7 +127,7 @@ namespace HaloShift
             // Create context menu
             var contextMenu = new ContextMenuStrip();
             contextMenu.Items.Add("Show Controls", null, (s, e) => ShowControlsWindow());
-            contextMenu.Items.Add("Toggle Mode", null, (s, e) => _modeManager.SwitchMode());
+            contextMenu.Items.Add("Toggle Mode", null, (s, e) => _modeManager.SwitchMode(ModeChangeInitiator.UserMenu));
             contextMenu.Items.Add("Show Keyboard", null, (s, e) => _virtualKeyboard?.ShowKeyboard());
             contextMenu.Items.Add("-");
             contextMenu.Items.Add("Exit", null, (s, e) => this.Close());
@@ -152,24 +152,27 @@ namespace HaloShift
 
         private void UpdateTimer_Tick(object sender, EventArgs e)
         {
-            if (!_controllerManager.IsConnected)
-                return;
-
             _controllerManager.Update();
             var currentState = _controllerManager.GetCurrentState();
 
-            // If virtual keyboard is visible, handle its input and skip other processing
+            // Mode toggle (LB+RB+Y) must run even when the virtual keyboard is open; otherwise
+            // switching back to controller mode is impossible without the tray menu.
+            // Do not bail out when XInput is briefly disconnected — that was skipping this entirely.
+            _modeManager.Update(currentState);
+
+            // Virtual keyboard owns D-pad / face buttons for typing, but sticks + triggers should
+            // still move the cursor and click (otherwise opening the keyboard disables mouse mode entirely).
             if (_virtualKeyboard?.Visible == true)
             {
-                _virtualKeyboard.HandleInput(currentState);
+                if (_controllerManager.IsConnected && _modeManager.CurrentMode == AppMode.Mouse)
+                    _modeManager.HandleMouseModePointerInput(currentState);
+                if (_controllerManager.IsConnected)
+                    _virtualKeyboard.HandleInput(currentState);
                 return;
             }
 
-            // Update mode based on input
-            _modeManager.Update(currentState);
-
-            // Handle mode-specific input
-            if (_modeManager.CurrentMode == AppMode.Mouse)
+            // Mouse mapping requires a live XInput controller
+            if (_modeManager.CurrentMode == AppMode.Mouse && _controllerManager.IsConnected)
             {
                 _modeManager.HandleMouseModeInput(currentState);
             }
