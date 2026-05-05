@@ -355,10 +355,11 @@ namespace HaloShift
             DispatchInputs(new[] { input });
         }
 
-        public static void PressKey(byte keyCode)
+        public static void PressKey(byte keyCode, int holdMilliseconds = 10)
         {
             SendKey(keyCode, true);
-            System.Threading.Thread.Sleep(50);
+            if (holdMilliseconds > 0)
+                System.Threading.Thread.Sleep(holdMilliseconds);
             SendKey(keyCode, false);
         }
 

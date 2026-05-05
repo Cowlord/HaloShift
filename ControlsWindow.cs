@@ -397,7 +397,9 @@ namespace HaloShift
                     string fullPath = Path.GetFullPath(path);
                     if (File.Exists(fullPath))
                     {
-                        return Image.FromFile(fullPath);
+                        using var fs = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                        using var source = Image.FromStream(fs);
+                        return new Bitmap(source);
                     }
                 }
             }

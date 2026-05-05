@@ -8,6 +8,8 @@ namespace HaloShift
         private readonly Controller[] _controllers = new Controller[4];
         private int _activeIndex;
         private Gamepad _previousState;
+        private Gamepad _currentState;
+        private bool _isConnected;
         private bool _disposed = false;
 
         public event EventHandler<GamepadStateChangedEventArgs> StateChanged;
@@ -19,6 +21,8 @@ namespace HaloShift
 
             SelectFirstConnectedSlot();
             _previousState = new Gamepad();
+            _currentState = new Gamepad();
+            _isConnected = Active.IsConnected;
         }
 
         private Controller Active => _controllers[_activeIndex];
@@ -42,9 +46,16 @@ namespace HaloShift
                 SelectFirstConnectedSlot();
 
             if (!Active.IsConnected)
+            {
+                _isConnected = false;
+                _currentState = new Gamepad();
+                _previousState = new Gamepad();
                 return;
+            }
 
+            _isConnected = true;
             var state = Active.GetState().Gamepad;
+            _currentState = state;
 
             // Check if state changed
             if (state.Buttons != _previousState.Buttons ||
@@ -62,28 +73,10 @@ namespace HaloShift
 
         public Gamepad GetCurrentState()
         {
-            if (!Active.IsConnected)
-                SelectFirstConnectedSlot();
-
-            if (!Active.IsConnected)
-                return _previousState;
-
-            return Active.GetState().Gamepad;
+            return _isConnected ? _currentState : new Gamepad();
         }
 
-        public bool IsConnected
-        {
-            get
-            {
-                for (int i = 0; i < 4; i++)
-                {
-                    if (_controllers[i].IsConnected)
-                        return true;
-                }
-
-                return false;
-            }
-        }
+        public bool IsConnected => _isConnected;
 
         public void Dispose()
         {

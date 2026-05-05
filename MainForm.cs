@@ -2,7 +2,6 @@ using System;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using System.Drawing;
-using System.Windows.Media;
 using System.Media;
 using DrawingColor = System.Drawing.Color;
 
@@ -153,6 +152,7 @@ namespace HaloShift
         private void UpdateTimer_Tick(object sender, EventArgs e)
         {
             _controllerManager.Update();
+            bool isConnected = _controllerManager.IsConnected;
             var currentState = _controllerManager.GetCurrentState();
 
             // Mode toggle (LB+RB+Y) must run even when the virtual keyboard is open; otherwise
@@ -164,15 +164,15 @@ namespace HaloShift
             // still move the cursor and click (otherwise opening the keyboard disables mouse mode entirely).
             if (_virtualKeyboard?.Visible == true)
             {
-                if (_controllerManager.IsConnected && _modeManager.CurrentMode == AppMode.Mouse)
+                if (isConnected && _modeManager.CurrentMode == AppMode.Mouse)
                     _modeManager.HandleMouseModePointerInput(currentState);
-                if (_controllerManager.IsConnected)
+                if (isConnected)
                     _virtualKeyboard.HandleInput(currentState);
                 return;
             }
 
             // Mouse mapping requires a live XInput controller
-            if (_modeManager.CurrentMode == AppMode.Mouse && _controllerManager.IsConnected)
+            if (_modeManager.CurrentMode == AppMode.Mouse && isConnected)
             {
                 _modeManager.HandleMouseModeInput(currentState);
             }
