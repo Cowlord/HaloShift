@@ -205,7 +205,7 @@ namespace HaloShift
             var section3 = CreateSection("Triggers & Bumpers", new[]
             {
                 ("LT + RT + X", "Middle click", AccentBlue),
-                ("LB + RB + Y", "Mode toggle", AccentYellow),
+                ("(hold) View + Menu", "Mode toggle", AccentBlue),
                 ("LT + RT + A", "Ctrl + W", AccentGreen),
                 ("LT + RT + B", "Alt + F4", AccentRed)
             }, sectionWidth);
@@ -314,12 +314,10 @@ namespace HaloShift
                 BackColor = Color.Transparent
             };
 
-            flow.Controls.Add(CreateHintText("Press"));
-            flow.Controls.Add(CreateButtonBadge("LB", AccentGreen, false));
+            flow.Controls.Add(CreateHintText("Hold"));
+            flow.Controls.Add(CreateButtonBadge("View", AccentBlue, false, 50));
             flow.Controls.Add(CreateHintText("+"));
-            flow.Controls.Add(CreateButtonBadge("RB", AccentGreen, false));
-            flow.Controls.Add(CreateHintText("+"));
-            flow.Controls.Add(CreateButtonBadge("Y", AccentYellow, true));
+            flow.Controls.Add(CreateButtonBadge("Menu", AccentBlue, false, 50));
             flow.Controls.Add(CreateHintText("to toggle"));
 
             panel.Controls.Add(flow);
@@ -343,7 +341,7 @@ namespace HaloShift
             };
         }
 
-        private Control CreateButtonBadge(string text, Color borderColor, bool filled)
+        private Control CreateButtonBadge(string text, Color borderColor, bool filled, int widthPixels = 28)
         {
             if (text == "A" || text == "B" || text == "X" || text == "Y")
             {
@@ -368,7 +366,7 @@ namespace HaloShift
                 ForeColor = filled ? Color.FromArgb(32, 32, 32) : borderColor,
                 BackColor = filled ? borderColor : Color.FromArgb(34, 34, 34),
                 AutoSize = false,
-                Size = new Size(28, 28),
+                Size = new Size(widthPixels, 28),
                 TextAlign = ContentAlignment.MiddleCenter,
                 Margin = new Padding(2, 2, 2, 0)
             };

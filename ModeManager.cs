@@ -27,7 +27,12 @@ namespace HaloShift
         public event EventHandler ShowKeyboardRequested;
 
         private const float TRIGGER_THRESHOLD = 0.5f; // Normalized: 0.0 to 1.0
-        private bool _toggleButtonWasPressed = false;
+
+        /// <summary>How long View+Menu must be held before the mode toggles (milliseconds).</summary>
+        private const double ModeToggleHoldMs = 0.0;
+
+        private DateTime? _viewMenuHoldStartedUtc;
+        private bool _viewMenuHoldToggleFired;
         private bool _f11ButtonWasPressed = false;
         private bool _xButtonWasPressed = false;
         private bool _altF4ComboWasPressed = false;
@@ -53,19 +58,30 @@ namespace HaloShift
 
         public void Update(Gamepad gamepad)
         {
-            // Check for mode toggle: LB + RB + Y
+            // Mode toggle: hold View (Back) + Menu (Start) — XInput names
             bool lb = (gamepad.Buttons & GamepadButtonFlags.LeftShoulder) != 0;
             bool rb = (gamepad.Buttons & GamepadButtonFlags.RightShoulder) != 0;
             bool y = (gamepad.Buttons & GamepadButtonFlags.Y) != 0;
-            bool allThreePressed = lb && rb && y;
+            bool view = (gamepad.Buttons & GamepadButtonFlags.Back) != 0;
+            bool menu = (gamepad.Buttons & GamepadButtonFlags.Start) != 0;
+            bool viewMenuHeld = view && menu;
 
-            // Only trigger toggle on the transition from unpressed to pressed
-            if (allThreePressed && !_toggleButtonWasPressed)
+            if (viewMenuHeld)
             {
-                SwitchMode(ModeChangeInitiator.Gamepad);
+                if (_viewMenuHoldStartedUtc == null)
+                    _viewMenuHoldStartedUtc = DateTime.UtcNow;
+                else if (!_viewMenuHoldToggleFired &&
+                         (DateTime.UtcNow - _viewMenuHoldStartedUtc.Value).TotalMilliseconds >= ModeToggleHoldMs)
+                {
+                    SwitchMode(ModeChangeInitiator.Gamepad);
+                    _viewMenuHoldToggleFired = true;
+                }
             }
-
-            _toggleButtonWasPressed = allThreePressed;
+            else
+            {
+                _viewMenuHoldStartedUtc = null;
+                _viewMenuHoldToggleFired = false;
+            }
 
             // Check for Y button alone (show keyboard) - only in Mouse mode
             bool yAlone = y && !lb && !rb;
@@ -273,7 +289,7 @@ namespace HaloShift
             }
             _leftStickWasPressed = leftStickClick;
 
-            // LB → send F11 (full-screen toggle) ONLY if not part of toggle combo
+            // LB → send F11 (full-screen toggle) when not combined with RB or Y
             bool lbAlone = lb && !rb && !y;
 
             // Only trigger F11 on the transition from unpressed to pressed

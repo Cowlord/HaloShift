@@ -155,7 +155,7 @@ namespace HaloShift
             bool isConnected = _controllerManager.IsConnected;
             var currentState = _controllerManager.GetCurrentState();
 
-            // Mode toggle (LB+RB+Y) must run even when the virtual keyboard is open; otherwise
+            // Mode toggle (hold View+Menu) must run even when the virtual keyboard is open; otherwise
             // switching back to controller mode is impossible without the tray menu.
             // Do not bail out when XInput is briefly disconnected — that was skipping this entirely.
             _modeManager.Update(currentState);
