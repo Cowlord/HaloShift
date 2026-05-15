@@ -180,23 +180,26 @@ namespace HaloShift
         {
             Rows.Clear();
 
+            // Row 1: ESC + F1-F12 (thinner row with smaller height)
             AddRow(
-                CreateFunctionKey("F1", 0x70, 70),
-                CreateFunctionKey("F2", 0x71, 70),
-                CreateFunctionKey("F3", 0x72, 70),
-                CreateFunctionKey("F4", 0x73, 70),
-                CreateFunctionKey("F5", 0x74, 70),
-                CreateFunctionKey("F6", 0x75, 70),
-                CreateFunctionKey("F7", 0x76, 70),
-                CreateFunctionKey("F8", 0x77, 70),
-                CreateFunctionKey("F9", 0x78, 70),
-                CreateFunctionKey("F10", 0x79, 70),
-                CreateFunctionKey("F11", 0x7A, 70),
-                CreateFunctionKey("F12", 0x7B, 70)
+                CreateFunctionKey("ESC", 0x1B, 60, 36),
+                CreateFunctionKey("F1", 0x70, 50, 36),
+                CreateFunctionKey("F2", 0x71, 50, 36),
+                CreateFunctionKey("F3", 0x72, 50, 36),
+                CreateFunctionKey("F4", 0x73, 50, 36),
+                CreateFunctionKey("F5", 0x74, 50, 36),
+                CreateFunctionKey("F6", 0x75, 50, 36),
+                CreateFunctionKey("F7", 0x76, 50, 36),
+                CreateFunctionKey("F8", 0x77, 50, 36),
+                CreateFunctionKey("F9", 0x78, 50, 36),
+                CreateFunctionKey("F10", 0x79, 50, 36),
+                CreateFunctionKey("F11", 0x7A, 50, 36),
+                CreateFunctionKey("F12", 0x7B, 50, 36)
             );
 
+            // Row 2: TAB + Numbers + Back + right-side nav cluster
             AddRow(
-                CreateFunctionKey("ESC", 0x1B, 80),
+                CreateFunctionKey("TAB", 0x09, 80),
                 CreateCharKey('1', '!'),
                 CreateCharKey('2', '@'),
                 CreateCharKey('3', '#'),
@@ -209,12 +212,20 @@ namespace HaloShift
                 CreateCharKey('0', ')'),
                 CreateCharKey('-', '_'),
                 CreateCharKey('=', '+'),
-                CreateFunctionKey("BACK", 0x08, 90)
+                CreateFunctionKey("BACK", 0x08, 90),
+                CreateFunctionKey("INS", 0x2D, 50, 36),
+                CreateFunctionKey("HOME", 0x24, 50, 36),
+                CreateFunctionKey("PGUP", 0x21, 50, 36),
+                CreateFunctionKey("LEFT", 0x25, 50, 36),
+                CreateFunctionKey("DOWN", 0x28, 50, 36),
+                CreateFunctionKey("RIGHT", 0x27, 50, 36),
+                CreateFunctionKey("END", 0x23, 50, 36),
+                CreateFunctionKey("PGDN", 0x22, 50, 36)
             );
 
+            // Row 3: Q row + right-side special cluster
             AddRow(
-                CreateFunctionKey("TAB", 90),
-                CreateCharKey('Q', null),
+                CreateCharKey('Q', null, 80),
                 CreateCharKey('W', null),
                 CreateCharKey('E', null),
                 CreateCharKey('R', null),
@@ -226,11 +237,17 @@ namespace HaloShift
                 CreateCharKey('P', null),
                 CreateCharKey('[', '{'),
                 CreateCharKey(']', '}'),
-                CreateCharKey('\\', '|', 70)
+                CreateCharKey('\\', '|', 80),
+                CreateFunctionKey("CAPS", 0x14, 50, 36),
+                CreateFunctionKey("PRTSC", 0x2C, 50, 36),
+                CreateFunctionKey("SCRLK", 0x91, 50, 36),
+                CreateFunctionKey("PAUSE", 0x13, 50, 36),
+                CreateFunctionKey("DEL", 0x2E, 50, 36)
             );
 
+            // Row 4: CAPS + A row + ENTER
             AddRow(
-                CreateModifierKey("CTRL", 0x11, 90),
+                CreateModifierKey("CAPS", 0x14, 100),
                 CreateCharKey('A', null),
                 CreateCharKey('S', null),
                 CreateCharKey('D', null),
@@ -241,12 +258,13 @@ namespace HaloShift
                 CreateCharKey('K', null),
                 CreateCharKey('L', null),
                 CreateCharKey(';', ':'),
-                CreateCharKey('\'', '"', 60),
+                CreateCharKey('\'', '"'),
                 CreateFunctionKey("ENTER", 0x0D, 110)
             );
 
+            // Row 5: SHIFT + Z row + SHIFT
             AddRow(
-                CreateModifierKey("SHIFT", 0x10, 110),
+                CreateModifierKey("SHIFT", 0x10, 120),
                 CreateCharKey('Z', null),
                 CreateCharKey('X', null),
                 CreateCharKey('C', null),
@@ -257,37 +275,19 @@ namespace HaloShift
                 CreateCharKey(',', '<'),
                 CreateCharKey('.', '>'),
                 CreateCharKey('/', '?'),
-                CreateModifierKey("SHIFT", 0x10, 110)
+                CreateModifierKey("SHIFT", 0x10, 120)
             );
 
+            // Row 6: Bottom row with modifiers and space
             AddRow(
-                CreateLayerToggleKey(_symbolLayer ? "ABC" : "SYM", 90),
-                CreateModifierKey("CTRL", 0x11, 90),
-                CreateModifierKey("WIN", 0x5B, 90),
-                CreateModifierKey("ALT", 0x12, 90),
-                CreateFunctionKey("SPACE", 0x20, 360),
-                CreateModifierKey("ALT", 0x12, 90),
-                CreateModifierKey("WIN", 0x5B, 90),
-                CreateModifierKey("CTRL", 0x11, 90)
-            );
-
-            AddRow(
-                CreateFunctionKey("INS", 0x2D, 70),
-                CreateFunctionKey("HOME", 0x24, 70),
-                CreateFunctionKey("PGUP", 0x21, 70),
-                CreateFunctionKey("LEFT", 0x25, 70),
-                CreateFunctionKey("DOWN", 0x28, 70),
-                CreateFunctionKey("RIGHT", 0x27, 70),
-                CreateFunctionKey("END", 0x23, 70),
-                CreateFunctionKey("PGDN", 0x22, 70)
-            );
-
-            AddRow(
-                CreateModifierKey("CAPS", 0x14, 100),
-                CreateFunctionKey("PRTSC", 0x2C, 80),
-                CreateFunctionKey("SCRLK", 0x91, 80),
-                CreateFunctionKey("PAUSE", 0x13, 80),
-                CreateFunctionKey("DEL", 0x2E, 80)
+                CreateLayerToggleKey(_symbolLayer ? "ABC" : "SYM", 80),
+                CreateModifierKey("CTRL", 0x11, 80),
+                CreateModifierKey("WIN", 0x5B, 80),
+                CreateModifierKey("ALT", 0x12, 80),
+                CreateFunctionKey("SPACE", 0x20, 340),
+                CreateModifierKey("ALT", 0x12, 80),
+                CreateModifierKey("WIN", 0x5B, 80),
+                CreateModifierKey("CTRL", 0x11, 80)
             );
 
             UpdateKeyLabels();
@@ -304,24 +304,29 @@ namespace HaloShift
             Rows.Add(row);
         }
 
-        private KeyViewModel CreateCharKey(char primary, char? alternate, double width = 70)
+        private KeyViewModel CreateCharKey(char primary, char? alternate, double width = 70, double height = 48)
         {
-            return new KeyViewModel(primary, alternate, width, KeyType.Character);
+            return new KeyViewModel(primary, alternate, width, height, KeyType.Character);
         }
 
-        private KeyViewModel CreateFunctionKey(string label, byte virtualKey, double width = 70)
+        private KeyViewModel CreateFunctionKey(string label, byte virtualKey, double width = 70, double height = 48)
         {
-            return new KeyViewModel(label, null, width, KeyType.Function, virtualKey);
+            return new KeyViewModel(label, null, width, height, KeyType.Function, virtualKey);
         }
 
-        private KeyViewModel CreateModifierKey(string label, byte virtualKey, double width)
+        private KeyViewModel CreateFunctionKey(string label, double width = 70, double height = 48)
         {
-            return new KeyViewModel(label, null, width, KeyType.Modifier, virtualKey);
+            return new KeyViewModel(label, null, width, height, KeyType.Function, null);
         }
 
-        private KeyViewModel CreateLayerToggleKey(string label, double width)
+        private KeyViewModel CreateModifierKey(string label, byte virtualKey, double width, double height = 48)
         {
-            return new KeyViewModel(label, null, width, KeyType.LayerToggle);
+            return new KeyViewModel(label, null, width, height, KeyType.Modifier, virtualKey);
+        }
+
+        private KeyViewModel CreateLayerToggleKey(string label, double width, double height = 48)
+        {
+            return new KeyViewModel(label, null, width, height, KeyType.LayerToggle);
         }
 
         private void UpdateKeyLabels()
@@ -551,6 +556,7 @@ namespace HaloShift
         public char? PrimaryCharacter { get; }
         public char? AlternateCharacter { get; }
         public double Width { get; }
+        public double Height { get; }
         public KeyType KeyType { get; }
         public byte? VirtualKey { get; }
 
@@ -597,23 +603,25 @@ namespace HaloShift
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        public KeyViewModel(char primaryCharacter, char? alternateCharacter, double width, KeyType keyType, byte? virtualKey = null)
+        public KeyViewModel(char primaryCharacter, char? alternateCharacter, double width, double height, KeyType keyType, byte? virtualKey = null)
         {
             PrimaryCharacter = primaryCharacter;
             AlternateCharacter = alternateCharacter;
             _label = primaryCharacter.ToString();
             Width = width;
+            Height = height;
             KeyType = keyType;
             VirtualKey = virtualKey;
             _background = Brushes.Transparent;
         }
 
-        public KeyViewModel(string label, char? alternateCharacter, double width, KeyType keyType, byte? virtualKey = null)
+        public KeyViewModel(string label, char? alternateCharacter, double width, double height, KeyType keyType, byte? virtualKey = null)
         {
             _label = label;
             PrimaryCharacter = null;
             AlternateCharacter = alternateCharacter;
             Width = width;
+            Height = height;
             KeyType = keyType;
             VirtualKey = virtualKey;
             _background = Brushes.Transparent;

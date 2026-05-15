@@ -25,7 +25,7 @@
               </ItemsControl.ItemsPanel>
               <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                  <Border Background="{Binding Background}" CornerRadius="8" Width="{Binding Width}" Height="48" BorderBrush="#FF77777F" BorderThickness="1">
+                  <Border Background="{Binding Background}" CornerRadius="8" Width="{Binding Width}" Height="{Binding Height}" BorderBrush="#FF77777F" BorderThickness="1">
                     <TextBlock Text="{Binding Display}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontSize="14" FontWeight="Medium" />
                   </Border>
                 </DataTemplate>

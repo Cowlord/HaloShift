@@ -5,7 +5,6 @@
         ShowInTaskbar="False"
         SystemDecorations="None"
         Background="Transparent"
-        TransparencyLevelHint="AcrylicBlur"
         WindowStartupLocation="CenterScreen"
         Opacity="0">
   <Border Background="Transparent" CornerRadius="16" Padding="20"/>
