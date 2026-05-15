@@ -1,39 +1,108 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:HaloShift"
         x:Class="HaloShift.VirtualKeyboardWindow"
+        x:DataType="local:VirtualKeyboardWindow"
+        x:CompileBindings="True"
         CanResize="False"
         SystemDecorations="None"
         Topmost="True"
         ShowInTaskbar="False"
+        IsVisible="False"
         Background="Transparent"
         SizeToContent="WidthAndHeight">
-  <Border Background="Transparent" BorderBrush="Transparent" Padding="8">
-    <StackPanel Spacing="6">
-      <ItemsControl ItemsSource="{Binding Rows}">
-        <ItemsControl.ItemsPanel>
-          <ItemsPanelTemplate>
-            <StackPanel Orientation="Vertical" Spacing="6" />
-          </ItemsPanelTemplate>
-        </ItemsControl.ItemsPanel>
-        <ItemsControl.ItemTemplate>
-          <DataTemplate>
-            <ItemsControl ItemsSource="{Binding Keys}">
+  <Border Background="#E0181B20"
+          BorderBrush="#FF3D4450"
+          BorderThickness="1"
+          CornerRadius="12"
+          Padding="10">
+    <ItemsControl ItemsSource="{Binding Rows}">
+      <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate>
+          <StackPanel Orientation="Vertical" Spacing="6" />
+        </ItemsPanelTemplate>
+      </ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="local:KeyboardRow" x:CompileBindings="True">
+          <Grid ColumnDefinitions="Auto,Auto">
+            <ItemsControl Grid.Column="0" ItemsSource="{Binding Keys}">
               <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
-                  <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center" />
+                  <StackPanel Orientation="Horizontal" Spacing="6" />
                 </ItemsPanelTemplate>
               </ItemsControl.ItemsPanel>
               <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                  <Border Background="{Binding Background}" CornerRadius="8" Width="{Binding Width}" Height="{Binding Height}" BorderBrush="#FF77777F" BorderThickness="1">
-                    <TextBlock Text="{Binding Display}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontSize="14" FontWeight="Medium" />
-                  </Border>
+                <DataTemplate x:DataType="local:KeyViewModel" x:CompileBindings="True">
+                  <Panel Width="{Binding Width}" Height="{Binding Height}">
+                    <Border IsVisible="{Binding IsGap}"
+                            Width="{Binding Width}"
+                            Height="{Binding Height}"
+                            Background="Transparent" />
+                    <Border IsVisible="{Binding IsKeyVisible}"
+                            Background="{Binding Background}"
+                            CornerRadius="6"
+                            Width="{Binding Width}"
+                            Height="{Binding Height}"
+                            BorderBrush="{Binding BorderBrush}"
+                            BorderThickness="1">
+                      <TextBlock Text="{Binding Display}"
+                                 HorizontalAlignment="Center"
+                                 VerticalAlignment="Center"
+                                 Foreground="#FFF1F5F9"
+                                 FontSize="12"
+                                 FontWeight="SemiBold" />
+                    </Border>
+                  </Panel>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
-          </DataTemplate>
-        </ItemsControl.ItemTemplate>
-      </ItemsControl>
-    </StackPanel>
+
+            <Border Grid.Column="1"
+                    Margin="14,0,0,0"
+                    IsVisible="{Binding HasRightCluster}"
+                    Background="#FF2A2F38"
+                    BorderBrush="#FF4B5563"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="6"
+                    MinWidth="170"
+                    VerticalAlignment="Top">
+              <ItemsControl ItemsSource="{Binding RightCluster.Keys}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center" />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="local:KeyViewModel" x:CompileBindings="True">
+                    <Panel Width="{Binding Width}" Height="{Binding Height}">
+                      <Border IsVisible="{Binding IsGap}"
+                              Width="{Binding Width}"
+                              Height="{Binding Height}"
+                              Background="Transparent" />
+                      <Border IsVisible="{Binding IsKeyVisible}"
+                              Background="{Binding Background}"
+                              CornerRadius="6"
+                              Width="{Binding Width}"
+                              Height="{Binding Height}"
+                              BorderBrush="{Binding BorderBrush}"
+                              BorderThickness="1">
+                        <TextBlock Text="{Binding Display}"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Foreground="#FFF1F5F9"
+                                   FontSize="12"
+                                   FontWeight="SemiBold" />
+                      </Border>
+                    </Panel>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </Border>
+          </Grid>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
   </Border>
+
 </Window>

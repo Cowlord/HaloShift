@@ -8,6 +8,7 @@ namespace HaloShift
         public MainWindow()
         {
             InitializeComponent();
+            IsVisible = false;
         }
 
         private void InitializeComponent()

@@ -6,6 +6,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Media;
+using WinFormsApplication = System.Windows.Forms.Application;
 
 namespace HaloShift
 {
@@ -36,7 +37,11 @@ namespace HaloShift
                 settings.Save();
             };
 
+            WinFormsApplication.EnableVisualStyles();
+            WinFormsApplication.SetCompatibleTextRenderingDefault(false);
+
             _trayIconManager = new TrayIconManager();
+            _trayIconManager.AboutRequested += (_, __) => ControlsWindowHost.ShowAbout();
             _trayIconManager.ToggleModeRequested += (_, __) => _modeManager?.SwitchMode(ModeChangeInitiator.UserMenu);
             _trayIconManager.ShowKeyboardRequested += (_, __) => _virtualKeyboard?.ShowKeyboard();
             _trayIconManager.ExitRequested += (_, __) => _desktopLifetime?.Shutdown();
@@ -46,6 +51,8 @@ namespace HaloShift
             _modeManager.ShowKeyboardRequested += ModeManager_ShowKeyboardRequested;
 
             _sensitivityOverlay = new SensitivityOverlayWindow();
+            _sensitivityOverlay.Hide();
+
             _virtualKeyboard = new VirtualKeyboardWindow();
             _virtualKeyboard.KeyboardClosed += (_, __) => { };
 
@@ -57,8 +64,6 @@ namespace HaloShift
                 desktop.MainWindow = mainWindow;
                 desktop.Exit += OnDesktopExit;
             }
-
-            mainWindow.Hide();
             _trayIconManager.AttachToWindow(mainWindow);
 
             _updateTimer = new DispatcherTimer

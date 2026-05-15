@@ -3,14 +3,20 @@ using Avalonia.Controls;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using System;
+using System.Runtime.InteropServices;
 using System.Windows.Input;
 
 namespace HaloShift
 {
     public class TrayIconManager : IDisposable
     {
-        private readonly TrayIcon _trayIcon;
+        [DllImport("user32.dll")]
+        private static extern uint GetDoubleClickTime();
 
+        private readonly TrayIcon _trayIcon;
+        private DateTime? _lastTrayClickUtc;
+
+        public event EventHandler? AboutRequested;
         public event EventHandler? ToggleModeRequested;
         public event EventHandler? ShowKeyboardRequested;
         public event EventHandler? ExitRequested;
@@ -23,7 +29,13 @@ namespace HaloShift
                 Icon = new WindowIcon(new Bitmap(AssetLoader.Open(new Uri("avares://HaloShift/AppIcon.ico"))))
             };
 
+            _trayIcon.Clicked += OnTrayIconClicked;
+
             var menu = new NativeMenu();
+
+            var aboutItem = new NativeMenuItem("About");
+            aboutItem.Click += (_, __) => AboutRequested?.Invoke(this, EventArgs.Empty);
+            menu.Items.Add(aboutItem);
 
             var toggleItem = new NativeMenuItem("Toggle Mode");
             toggleItem.Click += (_, __) => ToggleModeRequested?.Invoke(this, EventArgs.Empty);
@@ -32,6 +44,8 @@ namespace HaloShift
             var keyboardItem = new NativeMenuItem("Show Keyboard");
             keyboardItem.Click += (_, __) => ShowKeyboardRequested?.Invoke(this, EventArgs.Empty);
             menu.Items.Add(keyboardItem);
+
+            menu.Items.Add(new NativeMenuItemSeparator());
 
             var exitCommand = new AnonymousCommand(() => ExitRequested?.Invoke(this, EventArgs.Empty));
             menu.Items.Add(new NativeMenuItem("Exit")
@@ -75,8 +89,26 @@ namespace HaloShift
             // so this is a no-op placeholder for later platform-specific extension.
         }
 
+        private void OnTrayIconClicked(object? sender, EventArgs e)
+        {
+            var now = DateTime.UtcNow;
+            if (_lastTrayClickUtc.HasValue)
+            {
+                var elapsedMs = (now - _lastTrayClickUtc.Value).TotalMilliseconds;
+                _lastTrayClickUtc = null;
+                if (elapsedMs <= GetDoubleClickTime())
+                {
+                    AboutRequested?.Invoke(this, EventArgs.Empty);
+                    return;
+                }
+            }
+
+            _lastTrayClickUtc = now;
+        }
+
         public void Dispose()
         {
+            _trayIcon.Clicked -= OnTrayIconClicked;
             _trayIcon.IsVisible = false;
             _trayIcon.Menu = null;
         }

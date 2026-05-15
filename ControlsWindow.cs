@@ -147,14 +147,12 @@ namespace HaloShift
             this.DoubleBuffered = true;
             this.Padding = new Padding(2);
 
-            // Set icon
+            // Set icon from output directory (Avalonia embeds AppIcon.ico as a resource, not manifest)
             try
             {
-                using (var stream = System.Reflection.Assembly.GetExecutingAssembly()
-                    .GetManifestResourceStream("HaloShift.AppIcon.ico"))
-                {
-                    if (stream != null) this.Icon = new Icon(stream);
-                }
+                var iconPath = Path.Combine(AppContext.BaseDirectory, "AppIcon.ico");
+                if (File.Exists(iconPath))
+                    this.Icon = new Icon(iconPath);
             }
             catch { }
 
@@ -182,7 +180,7 @@ namespace HaloShift
                 ("🟨 Y", "Virtual Keyboard", AccentYellow),
                 ("🟦 X", "Escape", AccentBlue),
                 ("🟥 B", "Browser Back", AccentRed),
-                ("🟩 A", "Space / Confirm", AccentGreen)
+                ("LB", "F11 (fullscreen)", AccentYellow)
             }, sectionWidth);
             section1.Location = new Point(ContentMargin, currentY);
             this.Controls.Add(section1);
@@ -192,8 +190,11 @@ namespace HaloShift
                 ("🕹️ Left Stick", "Move cursor", AccentBlue),
                 ("LS (click)", "Windows key", AccentBlue),
                 ("🕹️ Right Stick", "Scroll wheel", AccentBlue),
+                ("RS (click)", "F5", AccentBlue),
                 ("RT (hold)", "Left mouse button", AccentOrange),
-                ("LT (hold)", "Right mouse button", AccentOrange)
+                ("LT (hold)", "Right mouse button", AccentOrange),
+                ("D-Pad Up", "Increase sensitivity", AccentBlue),
+                ("D-Pad Down", "Decrease sensitivity", AccentBlue)
             }, sectionWidth);
             section2.Location = new Point(ContentMargin + sectionWidth + SectionGap, currentY);
             this.Controls.Add(section2);

@@ -2,9 +2,9 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
-using Avalonia.Threading;
 using SharpDX.XInput;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
@@ -20,18 +20,29 @@ namespace HaloShift
         LayerToggle
     }
 
+    public enum KeyboardFocusArea
+    {
+        Main,
+        Right
+    }
+
     public partial class VirtualKeyboardWindow : Window
     {
+        private const double ClusterKeyWidth = 50;
+        private const double ClusterKeyHeight = 36;
+        private const double ClusterGapWidth = 50;
+
         private readonly ObservableCollection<KeyboardRow> _rows = new();
-        private bool _symbolLayer = false;
-        private bool _shiftActive = false;
-        private bool _capsLockActive = false;
-        private bool _ctrlActive = false;
-        private bool _altActive = false;
-        private bool _winActive = false;
+        private bool _symbolLayer;
+        private bool _shiftActive;
+        private bool _capsLockActive;
+        private bool _ctrlActive;
+        private bool _altActive;
+        private bool _winActive;
         private bool _firstInputFrame = true;
-        private int _currentRow = 0;
-        private int _currentCol = 0;
+        private KeyboardFocusArea _focusArea = KeyboardFocusArea.Main;
+        private int _currentRow;
+        private int _currentCol;
         private bool _dpadUpPressed;
         private bool _dpadDownPressed;
         private bool _dpadLeftPressed;
@@ -39,6 +50,7 @@ namespace HaloShift
         private bool _selectPressed;
         private bool _cancelPressed;
         private bool _backspacePressed;
+        private bool _lbPressed;
 
         public event EventHandler? KeyboardClosed;
 
@@ -50,6 +62,7 @@ namespace HaloShift
             DataContext = this;
             BuildKeyboardRows();
             UpdateSelection();
+            Hide();
         }
 
         private void InitializeComponent()
@@ -62,22 +75,19 @@ namespace HaloShift
             Show();
             Activate();
 
-            // Position at the bottom-center of the primary screen
             var screens = Screens.All;
             var primaryScreen = screens.FirstOrDefault(s => s.IsPrimary) ?? screens.FirstOrDefault();
 
             if (primaryScreen != null)
             {
                 var workingArea = primaryScreen.WorkingArea;
-
-                // Center horizontally, position at bottom with small margin
                 double x = workingArea.Position.X + (workingArea.Size.Width - Width) / 2;
                 double y = workingArea.Position.Y + workingArea.Size.Height - Height - 8;
-
                 Position = new PixelPoint((int)x, (int)y);
             }
 
             _firstInputFrame = true;
+            _focusArea = KeyboardFocusArea.Main;
             _currentRow = 0;
             _currentCol = 0;
             UpdateSelection();
@@ -91,11 +101,6 @@ namespace HaloShift
 
         public void HandleInput(Gamepad gamepad)
         {
-            if (_firstInputFrame)
-            {
-                _firstInputFrame = false;
-            }
-
             bool up = (gamepad.Buttons & GamepadButtonFlags.DPadUp) != 0;
             bool down = (gamepad.Buttons & GamepadButtonFlags.DPadDown) != 0;
             bool left = (gamepad.Buttons & GamepadButtonFlags.DPadLeft) != 0;
@@ -103,6 +108,27 @@ namespace HaloShift
             bool select = (gamepad.Buttons & GamepadButtonFlags.A) != 0;
             bool cancel = (gamepad.Buttons & GamepadButtonFlags.B) != 0;
             bool backspace = (gamepad.Buttons & GamepadButtonFlags.X) != 0;
+            bool lb = (gamepad.Buttons & GamepadButtonFlags.LeftShoulder) != 0;
+
+            if (_firstInputFrame)
+            {
+                _dpadUpPressed = up;
+                _dpadDownPressed = down;
+                _dpadLeftPressed = left;
+                _dpadRightPressed = right;
+                _selectPressed = select;
+                _cancelPressed = cancel;
+                _backspacePressed = backspace;
+                _lbPressed = lb;
+                _firstInputFrame = false;
+                return;
+            }
+
+            if (lb && !_lbPressed)
+            {
+                _symbolLayer = !_symbolLayer;
+                UpdateKeyLabels();
+            }
 
             if (up && !_dpadUpPressed)
                 MoveUp();
@@ -126,62 +152,153 @@ namespace HaloShift
             _selectPressed = select;
             _cancelPressed = cancel;
             _backspacePressed = backspace;
+            _lbPressed = lb;
         }
+
+        private IReadOnlyList<KeyViewModel> GetNavigableKeys(KeyboardFocusArea area, int row)
+        {
+            if (row < 0 || row >= Rows.Count)
+                return Array.Empty<KeyViewModel>();
+
+            if (area == KeyboardFocusArea.Main)
+                return Rows[row].Keys.Where(k => !k.IsGap).ToList();
+
+            if (Rows[row].RightCluster == null)
+                return Array.Empty<KeyViewModel>();
+
+            return Rows[row].RightCluster.Keys.Where(k => !k.IsGap).ToList();
+        }
+
+        private bool RowHasRightCluster(int row) =>
+            row >= 0 && row < Rows.Count && Rows[row].HasRightCluster;
 
         private void MoveUp()
         {
-            if (_currentRow > 0)
+            if (_focusArea == KeyboardFocusArea.Main)
+            {
+                if (_currentRow > 0)
+                {
+                    _currentRow--;
+                    ClampColumnForCurrentFocus();
+                }
+            }
+            else if (_currentRow > 0)
             {
                 _currentRow--;
-                _currentCol = Math.Min(_currentCol, Rows[_currentRow].Keys.Count - 1);
-                UpdateSelection();
+                ClampColumnForCurrentFocus();
             }
+
+            UpdateSelection();
         }
 
         private void MoveDown()
         {
-            if (_currentRow < Rows.Count - 1)
+            if (_focusArea == KeyboardFocusArea.Main)
+            {
+                if (_currentRow < Rows.Count - 1)
+                {
+                    _currentRow++;
+                    ClampColumnForCurrentFocus();
+                }
+            }
+            else if (_currentRow < Rows.Count - 1)
             {
                 _currentRow++;
-                _currentCol = Math.Min(_currentCol, Rows[_currentRow].Keys.Count - 1);
-                UpdateSelection();
+                while (_currentRow < Rows.Count && !RowHasRightCluster(_currentRow))
+                    _currentRow++;
+                ClampColumnForCurrentFocus();
             }
+
+            UpdateSelection();
         }
 
         private void MoveLeft()
         {
-            if (_currentCol > 0)
+            if (_focusArea == KeyboardFocusArea.Right)
+            {
+                if (_currentCol > 0)
+                {
+                    _currentCol--;
+                }
+                else
+                {
+                    _focusArea = KeyboardFocusArea.Main;
+                    var keys = GetNavigableKeys(KeyboardFocusArea.Main, _currentRow);
+                    _currentCol = Math.Max(0, keys.Count - 1);
+                }
+            }
+            else if (_currentCol > 0)
             {
                 _currentCol--;
             }
             else if (_currentRow > 0)
             {
                 _currentRow--;
-                _currentCol = Rows[_currentRow].Keys.Count - 1;
+                var keys = GetNavigableKeys(KeyboardFocusArea.Main, _currentRow);
+                _currentCol = Math.Max(0, keys.Count - 1);
             }
+
             UpdateSelection();
         }
 
         private void MoveRight()
         {
-            if (_currentCol < Rows[_currentRow].Keys.Count - 1)
+            if (_focusArea == KeyboardFocusArea.Main)
             {
-                _currentCol++;
+                var keys = GetNavigableKeys(KeyboardFocusArea.Main, _currentRow);
+                if (_currentCol < keys.Count - 1)
+                {
+                    _currentCol++;
+                }
+                else if (RowHasRightCluster(_currentRow))
+                {
+                    _focusArea = KeyboardFocusArea.Right;
+                    _currentCol = 0;
+                    ClampColumnForCurrentFocus();
+                }
+                else if (_currentRow < Rows.Count - 1)
+                {
+                    _currentRow++;
+                    _currentCol = 0;
+                }
             }
-            else if (_currentRow < Rows.Count - 1)
+            else
             {
-                _currentRow++;
-                _currentCol = 0;
+                var keys = GetNavigableKeys(KeyboardFocusArea.Right, _currentRow);
+                if (_currentCol < keys.Count - 1)
+                {
+                    _currentCol++;
+                }
+                else if (_currentRow < Rows.Count - 1)
+                {
+                    _currentRow++;
+                    while (_currentRow < Rows.Count && !RowHasRightCluster(_currentRow))
+                        _currentRow++;
+                    _currentCol = 0;
+                    ClampColumnForCurrentFocus();
+                }
             }
+
             UpdateSelection();
+        }
+
+        private void ClampColumnForCurrentFocus()
+        {
+            var keys = _focusArea == KeyboardFocusArea.Main
+                ? GetNavigableKeys(KeyboardFocusArea.Main, _currentRow)
+                : GetNavigableKeys(KeyboardFocusArea.Right, _currentRow);
+            if (keys.Count == 0)
+                _currentCol = 0;
+            else
+                _currentCol = Math.Clamp(_currentCol, 0, keys.Count - 1);
         }
 
         private void BuildKeyboardRows()
         {
             Rows.Clear();
 
-            // Row 1: ESC + F1-F12 (thinner row with smaller height)
-            AddRow(
+            // F-row: ESC + F1-F12
+            var fRow = AddMainRow(
                 CreateFunctionKey("ESC", 0x1B, 60, 36),
                 CreateFunctionKey("F1", 0x70, 50, 36),
                 CreateFunctionKey("F2", 0x71, 50, 36),
@@ -196,9 +313,13 @@ namespace HaloShift
                 CreateFunctionKey("F11", 0x7A, 50, 36),
                 CreateFunctionKey("F12", 0x7B, 50, 36)
             );
+            AttachRightCluster(fRow,
+                CreateFunctionKey("PRTSC", 0x2C, ClusterKeyWidth, ClusterKeyHeight),
+                CreateFunctionKey("SCRLK", 0x91, ClusterKeyWidth, ClusterKeyHeight),
+                CreateFunctionKey("PAUSE", 0x13, ClusterKeyWidth, ClusterKeyHeight));
 
-            // Row 2: TAB + Numbers + Back + right-side nav cluster
-            AddRow(
+            // Number row
+            var numRow = AddMainRow(
                 CreateFunctionKey("TAB", 0x09, 80),
                 CreateCharKey('1', '!'),
                 CreateCharKey('2', '@'),
@@ -212,19 +333,15 @@ namespace HaloShift
                 CreateCharKey('0', ')'),
                 CreateCharKey('-', '_'),
                 CreateCharKey('=', '+'),
-                CreateFunctionKey("BACK", 0x08, 90),
-                CreateFunctionKey("INS", 0x2D, 50, 36),
-                CreateFunctionKey("HOME", 0x24, 50, 36),
-                CreateFunctionKey("PGUP", 0x21, 50, 36),
-                CreateFunctionKey("LEFT", 0x25, 50, 36),
-                CreateFunctionKey("DOWN", 0x28, 50, 36),
-                CreateFunctionKey("RIGHT", 0x27, 50, 36),
-                CreateFunctionKey("END", 0x23, 50, 36),
-                CreateFunctionKey("PGDN", 0x22, 50, 36)
+                CreateFunctionKey("BACK", 0x08, 90)
             );
+            AttachRightCluster(numRow,
+                CreateFunctionKey("INS", 0x2D, ClusterKeyWidth, ClusterKeyHeight),
+                CreateFunctionKey("HOME", 0x24, ClusterKeyWidth, ClusterKeyHeight),
+                CreateFunctionKey("PGUP", 0x21, ClusterKeyWidth, ClusterKeyHeight));
 
-            // Row 3: Q row + right-side special cluster
-            AddRow(
+            // Q row
+            var qRow = AddMainRow(
                 CreateCharKey('Q', null, 80),
                 CreateCharKey('W', null),
                 CreateCharKey('E', null),
@@ -237,16 +354,15 @@ namespace HaloShift
                 CreateCharKey('P', null),
                 CreateCharKey('[', '{'),
                 CreateCharKey(']', '}'),
-                CreateCharKey('\\', '|', 80),
-                CreateFunctionKey("CAPS", 0x14, 50, 36),
-                CreateFunctionKey("PRTSC", 0x2C, 50, 36),
-                CreateFunctionKey("SCRLK", 0x91, 50, 36),
-                CreateFunctionKey("PAUSE", 0x13, 50, 36),
-                CreateFunctionKey("DEL", 0x2E, 50, 36)
+                CreateCharKey('\\', '|', 80)
             );
+            AttachRightCluster(qRow,
+                CreateFunctionKey("DEL", 0x2E, ClusterKeyWidth, ClusterKeyHeight),
+                CreateFunctionKey("END", 0x23, ClusterKeyWidth, ClusterKeyHeight),
+                CreateFunctionKey("PGDN", 0x22, ClusterKeyWidth, ClusterKeyHeight));
 
-            // Row 4: CAPS + A row + ENTER
-            AddRow(
+            // A row + ENTER
+            var aRow = AddMainRow(
                 CreateModifierKey("CAPS", 0x14, 100),
                 CreateCharKey('A', null),
                 CreateCharKey('S', null),
@@ -261,9 +377,13 @@ namespace HaloShift
                 CreateCharKey('\'', '"'),
                 CreateFunctionKey("ENTER", 0x0D, 110)
             );
+            AttachRightCluster(aRow,
+                CreateGap(ClusterGapWidth, ClusterKeyHeight),
+                CreateFunctionKey("UP", 0x26, ClusterKeyWidth, ClusterKeyHeight),
+                CreateGap(ClusterGapWidth, ClusterKeyHeight));
 
-            // Row 5: SHIFT + Z row + SHIFT
-            AddRow(
+            // Z row + shifts
+            var zRow = AddMainRow(
                 CreateModifierKey("SHIFT", 0x10, 120),
                 CreateCharKey('Z', null),
                 CreateCharKey('X', null),
@@ -277,9 +397,13 @@ namespace HaloShift
                 CreateCharKey('/', '?'),
                 CreateModifierKey("SHIFT", 0x10, 120)
             );
+            AttachRightCluster(zRow,
+                CreateFunctionKey("LEFT", 0x25, ClusterKeyWidth, ClusterKeyHeight),
+                CreateFunctionKey("DOWN", 0x28, ClusterKeyWidth, ClusterKeyHeight),
+                CreateFunctionKey("RIGHT", 0x27, ClusterKeyWidth, ClusterKeyHeight));
 
-            // Row 6: Bottom row with modifiers and space
-            AddRow(
+            // Bottom row
+            AddMainRow(
                 CreateLayerToggleKey(_symbolLayer ? "ABC" : "SYM", 80),
                 CreateModifierKey("CTRL", 0x11, 80),
                 CreateModifierKey("WIN", 0x5B, 80),
@@ -294,14 +418,25 @@ namespace HaloShift
             ApplyModifierStates();
         }
 
-        private void AddRow(params KeyViewModel[] keys)
+        private static void AttachRightCluster(KeyboardRow row, params KeyViewModel[] keys)
+        {
+            row.RightCluster = new KeyboardClusterRow();
+            foreach (var key in keys)
+                row.RightCluster.Keys.Add(key);
+        }
+
+        private KeyboardRow AddMainRow(params KeyViewModel[] keys)
         {
             var row = new KeyboardRow();
             foreach (var key in keys)
-            {
                 row.Keys.Add(key);
-            }
             Rows.Add(row);
+            return row;
+        }
+
+        private static KeyViewModel CreateGap(double width, double height)
+        {
+            return KeyViewModel.CreateSpacer(width, height);
         }
 
         private KeyViewModel CreateCharKey(char primary, char? alternate, double width = 70, double height = 48)
@@ -312,11 +447,6 @@ namespace HaloShift
         private KeyViewModel CreateFunctionKey(string label, byte virtualKey, double width = 70, double height = 48)
         {
             return new KeyViewModel(label, null, width, height, KeyType.Function, virtualKey);
-        }
-
-        private KeyViewModel CreateFunctionKey(string label, double width = 70, double height = 48)
-        {
-            return new KeyViewModel(label, null, width, height, KeyType.Function, null);
         }
 
         private KeyViewModel CreateModifierKey(string label, byte virtualKey, double width, double height = 48)
@@ -331,65 +461,79 @@ namespace HaloShift
 
         private void UpdateKeyLabels()
         {
-            foreach (var row in Rows)
+            foreach (var key in EnumerateAllKeys())
             {
-                foreach (var key in row.Keys)
-                {
-                    if (key.KeyType == KeyType.Character)
-                    {
-                        key.UpdateLabel(_symbolLayer, _shiftActive, _capsLockActive);
-                    }
-                    else if (key.KeyType == KeyType.LayerToggle)
-                    {
-                        key.Label = _symbolLayer ? "ABC" : "SYM";
-                    }
-                }
+                if (key.KeyType == KeyType.Character)
+                    key.UpdateLabel(_symbolLayer, _shiftActive, _capsLockActive);
+                else if (key.KeyType == KeyType.LayerToggle)
+                    key.Label = _symbolLayer ? "ABC" : "SYM";
             }
         }
 
         private void ApplyModifierStates()
         {
+            foreach (var key in EnumerateAllKeys())
+            {
+                if (key.KeyType != KeyType.Modifier)
+                    continue;
+
+                key.IsActive = key.Label switch
+                {
+                    "CTRL" => _ctrlActive,
+                    "ALT" => _altActive,
+                    "WIN" => _winActive,
+                    "SHIFT" => _shiftActive,
+                    "CAPS" => _capsLockActive,
+                    _ => false
+                };
+            }
+        }
+
+        private IEnumerable<KeyViewModel> EnumerateAllKeys()
+        {
             foreach (var row in Rows)
             {
-                foreach (var key in row.Keys)
-                {
-                    if (key.KeyType != KeyType.Modifier)
-                        continue;
+                foreach (var key in row.Keys.Where(k => !k.IsGap))
+                    yield return key;
+            }
 
-                    key.IsActive = key.Label switch
-                    {
-                        "CTRL" => _ctrlActive,
-                        "ALT" => _altActive,
-                        "WIN" => _winActive,
-                        "SHIFT" => _shiftActive,
-                        "CAPS" => _capsLockActive,
-                        _ => false
-                    };
-                }
+            foreach (var row in Rows)
+            {
+                if (row.RightCluster == null)
+                    continue;
+                foreach (var key in row.RightCluster.Keys.Where(k => !k.IsGap))
+                    yield return key;
             }
         }
 
         private void UpdateSelection()
         {
-            foreach (var row in Rows)
-            {
-                foreach (var key in row.Keys)
-                {
-                    key.IsSelected = false;
-                }
-            }
+            foreach (var key in EnumerateAllKeys())
+                key.IsSelected = false;
 
-            if (Rows.Count == 0)
+            var keys = _focusArea == KeyboardFocusArea.Main
+                ? GetNavigableKeys(KeyboardFocusArea.Main, _currentRow)
+                : GetNavigableKeys(KeyboardFocusArea.Right, _currentRow);
+
+            if (keys.Count == 0)
                 return;
 
             _currentRow = Math.Clamp(_currentRow, 0, Rows.Count - 1);
-            _currentCol = Math.Clamp(_currentCol, 0, Rows[_currentRow].Keys.Count - 1);
-            Rows[_currentRow].Keys[_currentCol].IsSelected = true;
+
+            _currentCol = Math.Clamp(_currentCol, 0, keys.Count - 1);
+            keys[_currentCol].IsSelected = true;
         }
 
         private void SelectCurrentKey()
         {
-            var key = Rows[_currentRow].Keys[_currentCol];
+            var keys = _focusArea == KeyboardFocusArea.Main
+                ? GetNavigableKeys(KeyboardFocusArea.Main, _currentRow)
+                : GetNavigableKeys(KeyboardFocusArea.Right, _currentRow);
+
+            if (keys.Count == 0)
+                return;
+
+            var key = keys[Math.Clamp(_currentCol, 0, keys.Count - 1)];
 
             switch (key.KeyType)
             {
@@ -520,6 +664,13 @@ namespace HaloShift
     public class KeyboardRow
     {
         public ObservableCollection<KeyViewModel> Keys { get; } = new();
+        public KeyboardClusterRow? RightCluster { get; set; }
+        public bool HasRightCluster => RightCluster != null;
+    }
+
+    public class KeyboardClusterRow
+    {
+        public ObservableCollection<KeyViewModel> Keys { get; } = new();
     }
 
     public class ModifierState
@@ -534,6 +685,7 @@ namespace HaloShift
     {
         private string _label;
         private IBrush _background;
+        private IBrush _borderBrush;
         private bool _isSelected;
         private bool _isActive;
 
@@ -552,6 +704,8 @@ namespace HaloShift
         }
 
         public string Display => _label;
+        public bool IsGap { get; }
+        public bool IsKeyVisible => !IsGap;
 
         public char? PrimaryCharacter { get; }
         public char? AlternateCharacter { get; }
@@ -601,9 +755,27 @@ namespace HaloShift
             }
         }
 
+        public IBrush BorderBrush
+        {
+            get => _borderBrush;
+            private set
+            {
+                if (_borderBrush != value)
+                {
+                    _borderBrush = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(BorderBrush)));
+                }
+            }
+        }
+
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        public KeyViewModel(char primaryCharacter, char? alternateCharacter, double width, double height, KeyType keyType, byte? virtualKey = null)
+        public static KeyViewModel CreateSpacer(double width, double height)
+        {
+            return new KeyViewModel(string.Empty, null, width, height, KeyType.Function, isGap: true);
+        }
+
+        public KeyViewModel(char primaryCharacter, char? alternateCharacter, double width, double height, KeyType keyType, byte? virtualKey = null, bool isGap = false)
         {
             PrimaryCharacter = primaryCharacter;
             AlternateCharacter = alternateCharacter;
@@ -612,10 +784,12 @@ namespace HaloShift
             Height = height;
             KeyType = keyType;
             VirtualKey = virtualKey;
-            _background = Brushes.Transparent;
+            IsGap = isGap;
+            _background = VirtualKeyboardWindowDefaultBrushes.KeyBackground;
+            _borderBrush = VirtualKeyboardWindowDefaultBrushes.KeyBorder;
         }
 
-        public KeyViewModel(string label, char? alternateCharacter, double width, double height, KeyType keyType, byte? virtualKey = null)
+        public KeyViewModel(string label, char? alternateCharacter, double width, double height, KeyType keyType, byte? virtualKey = null, bool isGap = false)
         {
             _label = label;
             PrimaryCharacter = null;
@@ -624,7 +798,9 @@ namespace HaloShift
             Height = height;
             KeyType = keyType;
             VirtualKey = virtualKey;
-            _background = Brushes.Transparent;
+            IsGap = isGap;
+            _background = VirtualKeyboardWindowDefaultBrushes.KeyBackground;
+            _borderBrush = VirtualKeyboardWindowDefaultBrushes.KeyBorder;
         }
 
         public void UpdateLabel(bool symbolLayer, bool shiftActive, bool capsLockActive)
@@ -664,19 +840,31 @@ namespace HaloShift
         {
             if (IsSelected)
             {
-                Background = Brushes.DodgerBlue;
+                Background = VirtualKeyboardWindowDefaultBrushes.SelectedKeyBackground;
+                BorderBrush = VirtualKeyboardWindowDefaultBrushes.SelectedKeyBorder;
             }
             else if (IsActive)
             {
-                Background = Brushes.DimGray;
+                Background = VirtualKeyboardWindowDefaultBrushes.ActiveKeyBackground;
+                BorderBrush = VirtualKeyboardWindowDefaultBrushes.KeyBorder;
             }
             else
             {
-                Background = Brushes.Transparent;
+                Background = VirtualKeyboardWindowDefaultBrushes.KeyBackground;
+                BorderBrush = VirtualKeyboardWindowDefaultBrushes.KeyBorder;
             }
         }
 
         [DllImport("user32.dll")]
         private static extern short VkKeyScan(char ch);
+    }
+
+    internal static class VirtualKeyboardWindowDefaultBrushes
+    {
+        public static readonly IBrush KeyBackground = new SolidColorBrush(Color.Parse("#FF5C6370"));
+        public static readonly IBrush KeyBorder = new SolidColorBrush(Color.Parse("#FF6B7280"));
+        public static readonly IBrush ActiveKeyBackground = new SolidColorBrush(Color.Parse("#FF4B5563"));
+        public static readonly IBrush SelectedKeyBackground = new SolidColorBrush(Color.Parse("#FF2563EB"));
+        public static readonly IBrush SelectedKeyBorder = new SolidColorBrush(Color.Parse("#FF3B82F6"));
     }
 }

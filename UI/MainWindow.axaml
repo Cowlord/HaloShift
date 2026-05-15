@@ -1,11 +1,15 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="HaloShift.MainWindow"
+        Width="1"
+        Height="1"
         CanResize="False"
         ShowInTaskbar="False"
+        ShowActivated="False"
         SystemDecorations="None"
         Background="Transparent"
-        WindowStartupLocation="CenterScreen"
+        WindowStartupLocation="Manual"
+        Position="-32000,-32000"
         Opacity="0">
-  <Border Background="Transparent" CornerRadius="16" Padding="20"/>
+  <Panel Width="1" Height="1" />
 </Window>

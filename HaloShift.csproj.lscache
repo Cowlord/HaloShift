@@ -37,7 +37,7 @@ TemporaryDependencyNodeTargetIdentifier=net8.0-windows
 /platform:x64
 /errorreport:prompt
 /warn:8
-/define:TRACE;DEBUG;NET;NET8_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NETCOREAPP1_0_OR_GREATER;NETCOREAPP1_1_OR_GREATER;NETCOREAPP2_0_OR_GREATER;NETCOREAPP2_1_OR_GREATER;NETCOREAPP2_2_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER;WINDOWS7_0_OR_GREATER
+/define:TRACE;DEBUG;NET;NET8_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER;WINDOWS7_0_OR_GREATER
 /highentropyva+
 /nullable:enable
 /debug+
@@ -58,6 +58,8 @@ TemporaryDependencyNodeTargetIdentifier=net8.0-windows
 App.axaml.cs
 AppSettings.cs
 ControllerManager.cs
+ControlsWindow.cs
+ControlsWindowHost.cs
 Input/VirtualKey.cs
 InputSimulator.cs
 ModeManager.cs
@@ -100,7 +102,6 @@ UI/
  microsoft.netcore.app.ref/8.0.27/ref/net8.0/
   Microsoft.CSharp.dll
   Microsoft.VisualBasic.Core.dll
-  Microsoft.VisualBasic.dll
   Microsoft.Win32.Primitives.dll
   Microsoft.Win32.Registry.dll
   mscorlib.dll
@@ -135,7 +136,6 @@ UI/
   System.Diagnostics.TraceSource.dll
   System.Diagnostics.Tracing.dll
   System.dll
-  System.Drawing.dll
   System.Drawing.Primitives.dll
   System.Dynamic.Runtime.dll
   System.Formats.Asn1.dll
@@ -261,11 +261,37 @@ UI/
   System.Xml.XPath.dll
   System.Xml.XPath.XDocument.dll
   WindowsBase.dll
+ microsoft.windowsdesktop.app.ref/8.0.27/ref/net8.0/
+  Accessibility.dll
+  Microsoft.VisualBasic.dll
+  Microsoft.VisualBasic.Forms.dll
+  Microsoft.Win32.Registry.AccessControl.dll
+  Microsoft.Win32.SystemEvents.dll
+  System.CodeDom.dll
+  System.Configuration.ConfigurationManager.dll
+  System.Design.dll
+  System.Diagnostics.EventLog.dll
+  System.Diagnostics.PerformanceCounter.dll
+  System.DirectoryServices.dll
+  System.Drawing.Common.dll
+  System.Drawing.Design.dll
+  System.Drawing.dll
+  System.IO.Packaging.dll
+  System.Resources.Extensions.dll
+  System.Security.Cryptography.Pkcs.dll
+  System.Security.Cryptography.ProtectedData.dll
+  System.Security.Cryptography.Xml.dll
+  System.Security.Permissions.dll
+  System.Threading.AccessControl.dll
+  System.Windows.Extensions.dll
+  System.Windows.Forms.Design.dll
+  System.Windows.Forms.Design.Editors.dll
+  System.Windows.Forms.dll
+  System.Windows.Forms.Primitives.dll
  sharpdx.xinput/4.2.0/lib/netstandard1.1/SharpDX.XInput.dll
  sharpdx/4.2.0/lib/netstandard1.1/SharpDX.dll
  skiasharp/2.88.9/lib/net6.0/SkiaSharp.dll
  system.io.pipelines/8.0.0/lib/net8.0/System.IO.Pipelines.dll
- system.windows.extensions/8.0.0/lib/net8.0/System.Windows.Extensions.dll
  tmds.dbus.protocol/0.21.3/lib/net8.0/Tmds.DBus.Protocol.dll
 
 [analyzerReferences]
@@ -285,6 +311,9 @@ UI/
  Microsoft.Interop.SourceGeneration.dll
  System.Text.Json.SourceGeneration.dll
  System.Text.RegularExpressions.Generator.dll
+<NUGET>/microsoft.windowsdesktop.app.ref/8.0.27/analyzers/dotnet/
+ cs/System.Windows.Forms.Analyzers.CSharp.dll
+ System.Windows.Forms.Analyzers.dll
 
 [analyzerConfigFiles]
 <DOTNET>/sdk/9.0.314/Sdks/Microsoft.NET.Sdk/analyzers/build/config/analysislevel_8_default.globalconfig

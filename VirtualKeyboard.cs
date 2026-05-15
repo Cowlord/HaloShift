@@ -117,11 +117,11 @@ namespace HaloShift
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.StartPosition = FormStartPosition.CenterScreen;
-            this.BackColor = DarkBg;
+            this.BackColor = slategrey;
             this.DoubleBuffered = true;
             this.TopMost = true;
             this.ShowInTaskbar = false;
-            this.Opacity = 0.85; // Very transparent background
+            this.Opacity = 1; // Very transparent background
             this.TransparencyKey = DarkBg; // Make background color transparent
 
             // Set icon

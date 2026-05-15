@@ -3,6 +3,7 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
     <Nullable>enable</Nullable>
     <ApplicationIcon>AppIcon.ico</ApplicationIcon>
     <RootNamespace>HaloShift</RootNamespace>
@@ -33,6 +34,9 @@
 
   <ItemGroup>
     <AvaloniaResource Include="AppIcon.ico" />
+    <Content Include="AppIcon.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
@@ -57,7 +61,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="MainForm.cs;ControlsWindow.cs;VirtualKeyboard.cs" />
+    <Compile Remove="MainForm.cs;VirtualKeyboard.cs" />
   </ItemGroup>
 
 </Project>
