@@ -1,30 +1,17 @@
-using System;
-using System.Threading;
-using System.Windows.Forms;
+using Avalonia;
 
 namespace HaloShift
 {
-    static class Program
+    internal static class Program
     {
-        private const string SingleInstanceMutexName = @"Local\HaloShiftSingleInstance";
-
-        [STAThread]
-        static void Main()
+        public static void Main(string[] args)
         {
-            using var instanceMutex = new Mutex(true, SingleInstanceMutexName, out bool createdNew);
-            if (!createdNew)
-                return;
-
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-
-            using (var controller = new ControllerManager())
-            {
-                using (var form = new MainForm(controller))
-                {
-                    Application.Run(form);
-                }
-            }
+            BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
         }
+
+        public static AppBuilder BuildAvaloniaApp()
+            => AppBuilder.Configure<App>()
+                         .UsePlatformDetect()
+                         .LogToTrace();
     }
 }

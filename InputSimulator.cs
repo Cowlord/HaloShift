@@ -75,6 +75,7 @@ namespace HaloShift
 
         private const uint KEYEVENTF_KEYDOWN = 0x0000;
         private const uint KEYEVENTF_KEYUP = 0x0002;
+        private const uint KEYEVENTF_EXTENDEDKEY = 0x0001;
 
         private static void DispatchInputs(INPUT[] inputs)
         {
@@ -336,6 +337,12 @@ namespace HaloShift
 
         public static void SendKey(byte keyCode, bool keyDown)
         {
+            uint flags = keyDown ? KEYEVENTF_KEYDOWN : KEYEVENTF_KEYUP;
+            if (keyCode == VirtualKey.LWin)
+            {
+                flags |= KEYEVENTF_EXTENDEDKEY;
+            }
+
             var input = new INPUT
             {
                 Type = INPUT_KEYBOARD,
@@ -345,7 +352,7 @@ namespace HaloShift
                     {
                         wVk = keyCode,
                         wScan = 0,
-                        dwFlags = keyDown ? KEYEVENTF_KEYDOWN : KEYEVENTF_KEYUP,
+                        dwFlags = flags,
                         time = 0,
                         dwExtraInfo = IntPtr.Zero
                     }

@@ -22,9 +22,11 @@ namespace HaloShift
         private AppMode _currentMode = AppMode.Controller;
         public AppMode CurrentMode => _currentMode;
 
-        public event EventHandler<ModeChangedEventArgs> ModeChanged;
-        public event EventHandler<SensitivityChangedEventArgs> SensitivityChanged;
-        public event EventHandler ShowKeyboardRequested;
+        public event EventHandler<ModeChangedEventArgs>? ModeChanged;
+        public event EventHandler<SensitivityChangedEventArgs>? SensitivityChanged;
+        public event EventHandler? ShowKeyboardRequested;
+
+        public Action<float>? OnSensitivityPersist { get; set; }
 
         private const float TRIGGER_THRESHOLD = 0.5f; // Normalized: 0.0 to 1.0
 
@@ -101,9 +103,30 @@ namespace HaloShift
                 if (newMode == AppMode.Controller)
                     ReleaseHeldMouseButtons();
 
+                ResetTransientButtonStates();
+
                 _currentMode = newMode;
                 ModeChanged?.Invoke(this, new ModeChangedEventArgs(newMode, initiator));
             }
+        }
+
+        private void ResetTransientButtonStates()
+        {
+            _viewMenuHoldStartedUtc = null;
+            _viewMenuHoldToggleFired = false;
+            _f11ButtonWasPressed = false;
+            _xButtonWasPressed = false;
+            _altF4ComboWasPressed = false;
+            _ctrlWComboWasPressed = false;
+            _bButtonWasPressed = false;
+            _middleClickComboWasPressed = false;
+            _rightStickWasPressed = false;
+            _leftStickWasPressed = false;
+            _dpadUpWasPressed = false;
+            _dpadDownWasPressed = false;
+            _yButtonWasPressed = false;
+            _prevWantLeftMouseDown = false;
+            _prevWantRightMouseDown = false;
         }
 
         public void ReleaseHeldMouseButtons()
@@ -368,6 +391,7 @@ namespace HaloShift
         private void RaiseSensitivityChanged(float newValue)
         {
             SensitivityChanged?.Invoke(this, new SensitivityChangedEventArgs(newValue));
+            OnSensitivityPersist?.Invoke(newValue);
         }
     }
 

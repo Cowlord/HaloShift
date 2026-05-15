@@ -12,7 +12,7 @@ namespace HaloShift
         private bool _isConnected;
         private bool _disposed = false;
 
-        public event EventHandler<GamepadStateChangedEventArgs> StateChanged;
+        public event EventHandler<GamepadStateChangedEventArgs>? StateChanged;
 
         public ControllerManager()
         {
