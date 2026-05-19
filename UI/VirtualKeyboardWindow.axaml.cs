@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Threading;
@@ -29,9 +30,9 @@ namespace HaloShift
 
     public partial class VirtualKeyboardWindow : Window
     {
-        private const double ClusterKeyWidth = 50;
-        private const double ClusterKeyHeight = 36;
-        private const double ClusterGapWidth = 50;
+        private const double ClusterKeyWidth = 70;
+        private const double ClusterKeyHeight = 48;
+        private const double ClusterGapWidth = 70;
         private const int TopRowIndex = 0;
         private const int FirstNavigableRowIndex = 1;
         private const int NavClusterRowCount = 3;
@@ -82,11 +83,19 @@ namespace HaloShift
 
         public ObservableCollection<KeyboardRow> Rows => _rows;
 
+        public KeyboardRow ClusterRow0 => Rows[0];
+        public KeyboardRow ClusterRow1 => Rows[1];
+        public KeyboardRow ClusterRow2 => Rows[2];
+        public KeyboardRow ArrowUpRow => Rows[ArrowUpRowIndex];
+        public KeyboardRow ArrowKeysRow => Rows[ArrowKeysRowIndex];
+
+        public IBrush ArrowClusterBorderBrush => VirtualKeyboardWindowDefaultBrushes.ClusterBorder;
+
         public VirtualKeyboardWindow()
         {
-            InitializeComponent();
             DataContext = this;
             BuildKeyboardRows();
+            InitializeComponent();
             UpdateSelection();
             // Don't call Hide() - IsVisible is already set to False in XAML
 
@@ -98,6 +107,11 @@ namespace HaloShift
         private void InitializeComponent()
         {
             AvaloniaXamlLoader.Load(this);
+        }
+
+        private void CloseButton_Click(object? sender, RoutedEventArgs e)
+        {
+            DismissRestoringPreviousFocus();
         }
 
         public void ShowKeyboard()
@@ -487,17 +501,20 @@ namespace HaloShift
         {
             Rows.Clear();
 
-            // F-row: ESC + F1-F12
+            // F-row: ESC + gap + F1-F12 (grouped properly)
             var fRow = AddMainRow(
-                CreateFunctionKey("ESC", 0x1B, 60, 36),
+                CreateFunctionKey("ESC", 0x1B, 50, 36),
+                CreateGap(30, 36),
                 CreateFunctionKey("F1", 0x70, 50, 36),
                 CreateFunctionKey("F2", 0x71, 50, 36),
                 CreateFunctionKey("F3", 0x72, 50, 36),
                 CreateFunctionKey("F4", 0x73, 50, 36),
+                CreateGap(20, 36),
                 CreateFunctionKey("F5", 0x74, 50, 36),
                 CreateFunctionKey("F6", 0x75, 50, 36),
                 CreateFunctionKey("F7", 0x76, 50, 36),
                 CreateFunctionKey("F8", 0x77, 50, 36),
+                CreateGap(20, 36),
                 CreateFunctionKey("F9", 0x78, 50, 36),
                 CreateFunctionKey("F10", 0x79, 50, 36),
                 CreateFunctionKey("F11", 0x7A, 50, 36),
@@ -508,9 +525,9 @@ namespace HaloShift
                 CreateFunctionKey("SCRLK", 0x91, ClusterKeyWidth, ClusterKeyHeight),
                 CreateFunctionKey("PAUSE", 0x13, ClusterKeyWidth, ClusterKeyHeight));
 
-            // Number row
+            // Number row: ` ~ through = + and BACKSPACE
             var numRow = AddMainRow(
-                CreateFunctionKey("TAB", 0x09, 80),
+                CreateCharKey('`', '~'),
                 CreateCharKey('1', '!'),
                 CreateCharKey('2', '@'),
                 CreateCharKey('3', '#'),
@@ -523,16 +540,17 @@ namespace HaloShift
                 CreateCharKey('0', ')'),
                 CreateCharKey('-', '_'),
                 CreateCharKey('=', '+'),
-                CreateFunctionKey("BACK", 0x08, 90)
+                CreateFunctionKey("BACK", 0x08, 100)
             );
             AttachRightCluster(numRow,
                 CreateFunctionKey("INS", 0x2D, ClusterKeyWidth, ClusterKeyHeight),
                 CreateFunctionKey("HOME", 0x24, ClusterKeyWidth, ClusterKeyHeight),
                 CreateFunctionKey("PGUP", 0x21, ClusterKeyWidth, ClusterKeyHeight));
 
-            // Q row
+            // Q row: TAB + QWERTY keys
             var qRow = AddMainRow(
-                CreateCharKey('Q', null, 80),
+                CreateFunctionKey("TAB", 0x09, 90),
+                CreateCharKey('Q', null),
                 CreateCharKey('W', null),
                 CreateCharKey('E', null),
                 CreateCharKey('R', null),
@@ -551,7 +569,7 @@ namespace HaloShift
                 CreateFunctionKey("END", 0x23, ClusterKeyWidth, ClusterKeyHeight),
                 CreateFunctionKey("PGDN", 0x22, ClusterKeyWidth, ClusterKeyHeight));
 
-            // A row + ENTER
+            // A row: CAPS + ASDF keys + ENTER
             var aRow = AddMainRow(
                 CreateModifierKey("CAPS", 0x14, 100),
                 CreateCharKey('A', null),
@@ -572,9 +590,9 @@ namespace HaloShift
                 CreateFunctionKey("UP", 0x26, ClusterKeyWidth, ClusterKeyHeight),
                 CreateGap(ClusterGapWidth, ClusterKeyHeight));
 
-            // Z row + shifts
+            // Z row: SHIFT + ZXCV keys + SHIFT
             var zRow = AddMainRow(
-                CreateModifierKey("SHIFT", 0x10, 120),
+                CreateModifierKey("SHIFT", 0x10, 130),
                 CreateCharKey('Z', null),
                 CreateCharKey('X', null),
                 CreateCharKey('C', null),
@@ -585,23 +603,22 @@ namespace HaloShift
                 CreateCharKey(',', '<'),
                 CreateCharKey('.', '>'),
                 CreateCharKey('/', '?'),
-                CreateModifierKey("SHIFT", 0x10, 120)
+                CreateModifierKey("SHIFT", 0x10, 110)
             );
             AttachRightCluster(zRow,
                 CreateFunctionKey("LEFT", 0x25, ClusterKeyWidth, ClusterKeyHeight),
                 CreateFunctionKey("DOWN", 0x28, ClusterKeyWidth, ClusterKeyHeight),
                 CreateFunctionKey("RIGHT", 0x27, ClusterKeyWidth, ClusterKeyHeight));
 
-            // Bottom row
+            // Bottom row: CTRL, WIN, ALT, SPACE, ALT, WIN, MENU, CTRL
             AddMainRow(
-                CreateLayerToggleKey(_symbolLayer ? "ABC" : "SYM", 80),
-                CreateModifierKey("CTRL", 0x11, 80),
-                CreateModifierKey("WIN", 0x5B, 80),
-                CreateModifierKey("ALT", 0x12, 80),
-                CreateFunctionKey("SPACE", 0x20, 340),
-                CreateModifierKey("ALT", 0x12, 80),
-                CreateModifierKey("WIN", 0x5B, 80),
-                CreateModifierKey("CTRL", 0x11, 80)
+                CreateModifierKey("CTRL", 0x11, 90),
+                CreateModifierKey("WIN", 0x5B, 90),
+                CreateModifierKey("ALT", 0x12, 90),
+                CreateFunctionKey("SPACE", 0x20, 360),
+                CreateModifierKey("ALT", 0x12, 90),
+                CreateModifierKey("WIN", 0x5B, 90),
+                CreateLayerToggleKey(_symbolLayer ? "ABC" : "SYM", 90)
             );
 
             UpdateKeyLabels();

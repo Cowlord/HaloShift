@@ -12,98 +12,169 @@
         IsVisible="False"
         Background="Transparent"
         SizeToContent="WidthAndHeight">
+  <Window.Resources>
+    <DataTemplate x:Key="KeyCellTemplate" x:DataType="local:KeyViewModel" x:CompileBindings="True">
+      <Panel Width="{Binding Width}" Height="{Binding Height}">
+        <Border IsVisible="{Binding IsGap}"
+                Width="{Binding Width}"
+                Height="{Binding Height}"
+                Background="Transparent" />
+        <Border IsVisible="{Binding IsKeyVisible}"
+                Background="{Binding Background}"
+                CornerRadius="6"
+                Width="{Binding Width}"
+                Height="{Binding Height}"
+                BorderBrush="{Binding BorderBrush}"
+                BorderThickness="1">
+          <TextBlock Text="{Binding Display}"
+                     HorizontalAlignment="Center"
+                     VerticalAlignment="Center"
+                     Foreground="#FFF1F5F9"
+                     FontSize="12"
+                     FontWeight="SemiBold" />
+        </Border>
+      </Panel>
+    </DataTemplate>
+  </Window.Resources>
+
   <Border Background="#E0181B20"
           BorderBrush="#FF3D4450"
           BorderThickness="1"
           CornerRadius="12"
           Padding="10">
-    <ItemsControl ItemsSource="{Binding Rows}">
-      <ItemsControl.ItemsPanel>
-        <ItemsPanelTemplate>
-          <StackPanel Orientation="Vertical" Spacing="6" />
-        </ItemsPanelTemplate>
-      </ItemsControl.ItemsPanel>
-      <ItemsControl.ItemTemplate>
-        <DataTemplate x:DataType="local:KeyboardRow" x:CompileBindings="True">
-          <Grid ColumnDefinitions="Auto,Auto">
-            <ItemsControl Grid.Column="0" ItemsSource="{Binding Keys}">
+    <Grid RowDefinitions="Auto,*" RowSpacing="8">
+      <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+        <TextBlock Text="Virtual Keyboard"
+                   Foreground="#FF9CA3AF"
+                   FontSize="11"
+                   VerticalAlignment="Center" />
+        <Button Grid.Column="1"
+                Content="✕"
+                Background="Transparent"
+                Foreground="#FF9CA3AF"
+                BorderThickness="0"
+                FontSize="18"
+                Padding="8,0"
+                Click="CloseButton_Click">
+          <Button.Styles>
+            <Style Selector="Button:pointerover">
+              <Setter Property="Foreground" Value="#FFF1F5F9" />
+            </Style>
+          </Button.Styles>
+        </Button>
+      </Grid>
+
+      <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="14">
+        <ItemsControl Grid.Column="0" ItemsSource="{Binding Rows}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Orientation="Vertical" Spacing="6" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="local:KeyboardRow" x:CompileBindings="True">
+              <ItemsControl ItemsSource="{Binding Keys}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal" Spacing="6" />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="local:KeyViewModel" x:CompileBindings="True">
+                    <ContentControl Content="{Binding}"
+                                    ContentTemplate="{StaticResource KeyCellTemplate}" />
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <StackPanel Grid.Column="1"
+                    Width="234"
+                    Spacing="6"
+                    VerticalAlignment="Top">
+          <Border Height="60"
+                  Background="#FF2A2F38"
+                  BorderBrush="{Binding ClusterRow0.RightClusterBorderBrush}"
+                  BorderThickness="1"
+                  CornerRadius="8"
+                  Padding="6">
+            <ItemsControl ItemsSource="{Binding ClusterRow0.RightCluster.Keys}"
+                          ItemTemplate="{StaticResource KeyCellTemplate}">
               <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
                   <StackPanel Orientation="Horizontal" Spacing="6" />
                 </ItemsPanelTemplate>
               </ItemsControl.ItemsPanel>
-              <ItemsControl.ItemTemplate>
-                <DataTemplate x:DataType="local:KeyViewModel" x:CompileBindings="True">
-                  <Panel Width="{Binding Width}" Height="{Binding Height}">
-                    <Border IsVisible="{Binding IsGap}"
-                            Width="{Binding Width}"
-                            Height="{Binding Height}"
-                            Background="Transparent" />
-                    <Border IsVisible="{Binding IsKeyVisible}"
-                            Background="{Binding Background}"
-                            CornerRadius="6"
-                            Width="{Binding Width}"
-                            Height="{Binding Height}"
-                            BorderBrush="{Binding BorderBrush}"
-                            BorderThickness="1">
-                      <TextBlock Text="{Binding Display}"
-                                 HorizontalAlignment="Center"
-                                 VerticalAlignment="Center"
-                                 Foreground="#FFF1F5F9"
-                                 FontSize="12"
-                                 FontWeight="SemiBold" />
-                    </Border>
-                  </Panel>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
             </ItemsControl>
+          </Border>
 
-            <Border Grid.Column="1"
-                    Margin="14,0,0,0"
-                    IsVisible="{Binding HasRightCluster}"
-                    Background="#FF2A2F38"
-                    BorderBrush="{Binding RightClusterBorderBrush}"
-                    BorderThickness="1"
-                    CornerRadius="8"
-                    Padding="6"
-                    MinWidth="170"
-                    VerticalAlignment="Top">
-              <ItemsControl ItemsSource="{Binding RightCluster.Keys}">
+          <Border Height="60"
+                  Background="#FF2A2F38"
+                  BorderBrush="{Binding ClusterRow1.RightClusterBorderBrush}"
+                  BorderThickness="1"
+                  CornerRadius="8"
+                  Padding="6">
+            <ItemsControl ItemsSource="{Binding ClusterRow1.RightCluster.Keys}"
+                          ItemTemplate="{StaticResource KeyCellTemplate}"
+                          VerticalAlignment="Center">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <StackPanel Orientation="Horizontal" Spacing="6" />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+            </ItemsControl>
+          </Border>
+
+          <Border Height="60"
+                  Background="#FF2A2F38"
+                  BorderBrush="{Binding ClusterRow2.RightClusterBorderBrush}"
+                  BorderThickness="1"
+                  CornerRadius="8"
+                  Padding="6">
+            <ItemsControl ItemsSource="{Binding ClusterRow2.RightCluster.Keys}"
+                          ItemTemplate="{StaticResource KeyCellTemplate}"
+                          VerticalAlignment="Center">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <StackPanel Orientation="Horizontal" Spacing="6" />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+            </ItemsControl>
+          </Border>
+
+          <Border Height="114"
+                  Background="#FF2A2F38"
+                  BorderBrush="{Binding ArrowClusterBorderBrush}"
+                  BorderThickness="1"
+                  CornerRadius="8"
+                  Padding="6">
+            <Grid RowDefinitions="Auto,Auto" RowSpacing="6" VerticalAlignment="Center">
+              <ItemsControl Grid.Row="0"
+                            ItemsSource="{Binding ArrowUpRow.RightCluster.Keys}"
+                            ItemTemplate="{StaticResource KeyCellTemplate}">
                 <ItemsControl.ItemsPanel>
                   <ItemsPanelTemplate>
-                    <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center" />
+                    <StackPanel Orientation="Horizontal" Spacing="6" />
                   </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                  <DataTemplate x:DataType="local:KeyViewModel" x:CompileBindings="True">
-                    <Panel Width="{Binding Width}" Height="{Binding Height}">
-                      <Border IsVisible="{Binding IsGap}"
-                              Width="{Binding Width}"
-                              Height="{Binding Height}"
-                              Background="Transparent" />
-                      <Border IsVisible="{Binding IsKeyVisible}"
-                              Background="{Binding Background}"
-                              CornerRadius="6"
-                              Width="{Binding Width}"
-                              Height="{Binding Height}"
-                              BorderBrush="{Binding BorderBrush}"
-                              BorderThickness="1">
-                        <TextBlock Text="{Binding Display}"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   Foreground="#FFF1F5F9"
-                                   FontSize="12"
-                                   FontWeight="SemiBold" />
-                      </Border>
-                    </Panel>
-                  </DataTemplate>
-                </ItemsControl.ItemTemplate>
               </ItemsControl>
-            </Border>
-          </Grid>
-        </DataTemplate>
-      </ItemsControl.ItemTemplate>
-    </ItemsControl>
-  </Border>
+              <ItemsControl Grid.Row="1"
+                            ItemsSource="{Binding ArrowKeysRow.RightCluster.Keys}"
+                            ItemTemplate="{StaticResource KeyCellTemplate}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal" Spacing="6" />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+              </ItemsControl>
+            </Grid>
+          </Border>
 
+          <Border Height="48" Background="Transparent" BorderThickness="0" />
+        </StackPanel>
+      </Grid>
+    </Grid>
+  </Border>
 </Window>
