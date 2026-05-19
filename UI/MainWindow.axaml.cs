@@ -11,6 +11,7 @@ namespace HaloShift
         public MainWindow()
         {
             InitializeComponent();
+            this.ExcludeFromTaskSwitcher();
             IsVisible = false;
             ShowInTaskbar = false;
 
