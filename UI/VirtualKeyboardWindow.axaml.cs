@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
+using Avalonia.Threading;
 using SharpDX.XInput;
 using System;
 using System.Collections.Generic;
@@ -20,10 +21,10 @@ namespace HaloShift
         LayerToggle
     }
 
-    public enum KeyboardFocusArea
+    public enum KeyboardNavigationZone
     {
         Main,
-        Right
+        NavCluster
     }
 
     public partial class VirtualKeyboardWindow : Window
@@ -31,6 +32,18 @@ namespace HaloShift
         private const double ClusterKeyWidth = 50;
         private const double ClusterKeyHeight = 36;
         private const double ClusterGapWidth = 50;
+        private const int TopRowIndex = 0;
+        private const int FirstNavigableRowIndex = 1;
+        private const int NavClusterRowCount = 3;
+        private const int ArrowUpRowIndex = 3;
+        private const int ArrowKeysRowIndex = 4;
+
+        private static readonly HashSet<string> ExcludedNavLabels = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "PRTSC", "SCRLK", "PAUSE",
+            "INS", "HOME", "PGUP", "DEL", "END", "PGDN",
+            "UP", "DOWN", "LEFT", "RIGHT"
+        };
 
         private readonly ObservableCollection<KeyboardRow> _rows = new();
         private bool _symbolLayer;
@@ -40,9 +53,16 @@ namespace HaloShift
         private bool _altActive;
         private bool _winActive;
         private bool _firstInputFrame = true;
-        private KeyboardFocusArea _focusArea = KeyboardFocusArea.Main;
+        private bool _hasBeenShown;
+        private KeyboardNavigationZone _zone = KeyboardNavigationZone.Main;
         private int _currentRow;
         private int _currentCol;
+        private int _navRow;
+        private int _navCol;
+        private int _savedMainRow;
+        private int _savedMainCol;
+        private bool _rbPressed;
+        private bool _lbRbComboPressed;
         private bool _dpadUpPressed;
         private bool _dpadDownPressed;
         private bool _dpadLeftPressed;
@@ -51,8 +71,14 @@ namespace HaloShift
         private bool _cancelPressed;
         private bool _backspacePressed;
         private bool _lbPressed;
+        private DispatcherTimer? _arrowPulseTimer;
+        private IntPtr _previousWindow;
 
         public event EventHandler? KeyboardClosed;
+
+        public bool IsKeyboardOpen { get; private set; }
+
+        public bool IsNavClusterActive => _zone == KeyboardNavigationZone.NavCluster;
 
         public ObservableCollection<KeyboardRow> Rows => _rows;
 
@@ -62,7 +88,11 @@ namespace HaloShift
             DataContext = this;
             BuildKeyboardRows();
             UpdateSelection();
-            Hide();
+            // Don't call Hide() - IsVisible is already set to False in XAML
+
+            // Prevent window from ever actually closing
+            // The app manages visibility with IsVisible property
+            Closing += (sender, e) => e.Cancel = true;
         }
 
         private void InitializeComponent()
@@ -72,7 +102,22 @@ namespace HaloShift
 
         public void ShowKeyboard()
         {
-            Show();
+            if (!Dispatcher.UIThread.CheckAccess())
+            {
+                Dispatcher.UIThread.Post(ShowKeyboard);
+                return;
+            }
+
+            _previousWindow = GetForegroundWindow();
+            IsKeyboardOpen = true;
+
+            if (!_hasBeenShown)
+            {
+                Show();
+                _hasBeenShown = true;
+            }
+
+            IsVisible = true;
             Activate();
 
             var screens = Screens.All;
@@ -86,17 +131,16 @@ namespace HaloShift
                 Position = new PixelPoint((int)x, (int)y);
             }
 
+            ResetNavigationZone();
             _firstInputFrame = true;
-            _focusArea = KeyboardFocusArea.Main;
-            _currentRow = 0;
+            _currentRow = FirstNavigableRowIndex;
             _currentCol = 0;
             UpdateSelection();
         }
 
         public void DismissRestoringPreviousFocus()
         {
-            Hide();
-            KeyboardClosed?.Invoke(this, EventArgs.Empty);
+            HideKeyboard();
         }
 
         public void HandleInput(Gamepad gamepad)
@@ -109,6 +153,8 @@ namespace HaloShift
             bool cancel = (gamepad.Buttons & GamepadButtonFlags.B) != 0;
             bool backspace = (gamepad.Buttons & GamepadButtonFlags.X) != 0;
             bool lb = (gamepad.Buttons & GamepadButtonFlags.LeftShoulder) != 0;
+            bool rb = (gamepad.Buttons & GamepadButtonFlags.RightShoulder) != 0;
+            bool lbRbCombo = lb && rb;
 
             if (_firstInputFrame)
             {
@@ -120,24 +166,56 @@ namespace HaloShift
                 _cancelPressed = cancel;
                 _backspacePressed = backspace;
                 _lbPressed = lb;
+                _rbPressed = rb;
+                _lbRbComboPressed = lbRbCombo;
                 _firstInputFrame = false;
                 return;
             }
 
-            if (lb && !_lbPressed)
+            if (lbRbCombo && !_lbRbComboPressed)
             {
-                _symbolLayer = !_symbolLayer;
-                UpdateKeyLabels();
+                ToggleNavClusterZone();
+            }
+            else if (rb && !lb)
+            {
+                if (up && !_dpadUpPressed)
+                    SendArrowKey(0x26);
+                if (down && !_dpadDownPressed)
+                    SendArrowKey(0x28);
+                if (left && !_dpadLeftPressed)
+                    SendArrowKey(0x25);
+                if (right && !_dpadRightPressed)
+                    SendArrowKey(0x27);
+            }
+            else if (_zone == KeyboardNavigationZone.NavCluster)
+            {
+                if (up && !_dpadUpPressed)
+                    MoveNavClusterUp();
+                if (down && !_dpadDownPressed)
+                    MoveNavClusterDown();
+                if (left && !_dpadLeftPressed)
+                    MoveNavClusterLeft();
+                if (right && !_dpadRightPressed)
+                    MoveNavClusterRight();
+            }
+            else
+            {
+                if (lb && !_lbPressed && !rb)
+                {
+                    _symbolLayer = !_symbolLayer;
+                    UpdateKeyLabels();
+                }
+
+                if (up && !_dpadUpPressed)
+                    MoveUp();
+                if (down && !_dpadDownPressed)
+                    MoveDown();
+                if (left && !_dpadLeftPressed)
+                    MoveLeft();
+                if (right && !_dpadRightPressed)
+                    MoveRight();
             }
 
-            if (up && !_dpadUpPressed)
-                MoveUp();
-            if (down && !_dpadDownPressed)
-                MoveDown();
-            if (left && !_dpadLeftPressed)
-                MoveLeft();
-            if (right && !_dpadRightPressed)
-                MoveRight();
             if (select && !_selectPressed)
                 SelectCurrentKey();
             if (cancel && !_cancelPressed)
@@ -153,140 +231,252 @@ namespace HaloShift
             _cancelPressed = cancel;
             _backspacePressed = backspace;
             _lbPressed = lb;
+            _rbPressed = rb;
+            _lbRbComboPressed = lbRbCombo;
         }
 
-        private IReadOnlyList<KeyViewModel> GetNavigableKeys(KeyboardFocusArea area, int row)
+        private void ResetNavigationZone()
         {
-            if (row < 0 || row >= Rows.Count)
-                return Array.Empty<KeyViewModel>();
-
-            if (area == KeyboardFocusArea.Main)
-                return Rows[row].Keys.Where(k => !k.IsGap).ToList();
-
-            if (Rows[row].RightCluster == null)
-                return Array.Empty<KeyViewModel>();
-
-            return Rows[row].RightCluster.Keys.Where(k => !k.IsGap).ToList();
+            _arrowPulseTimer?.Stop();
+            _zone = KeyboardNavigationZone.Main;
+            _navRow = 0;
+            _navCol = 0;
+            _rbPressed = false;
+            _lbRbComboPressed = false;
+            UpdateNavClusterHighlight();
         }
 
-        private bool RowHasRightCluster(int row) =>
-            row >= 0 && row < Rows.Count && Rows[row].HasRightCluster;
+        private void ToggleNavClusterZone()
+        {
+            if (_zone == KeyboardNavigationZone.Main)
+            {
+                _savedMainRow = _currentRow;
+                _savedMainCol = _currentCol;
+                _zone = KeyboardNavigationZone.NavCluster;
+                _navRow = 0;
+                _navCol = 0;
+            }
+            else
+            {
+                _zone = KeyboardNavigationZone.Main;
+                _currentRow = _savedMainRow;
+                _currentCol = _savedMainCol;
+            }
+
+            UpdateNavClusterHighlight();
+            UpdateSelection();
+        }
+
+        private void UpdateNavClusterHighlight()
+        {
+            for (int i = 0; i < Rows.Count; i++)
+            {
+                var row = Rows[i];
+                if (row.HasRightCluster)
+                    row.HighlightNavCluster = IsNavClusterActive && i < NavClusterRowCount;
+            }
+        }
+
+        // Nav cluster keys live on keyboard rows 0–2 (F-row, number row, Q-row).
+        private KeyViewModel GetNavClusterKey(int row, int col) =>
+            Rows[row].RightCluster!.Keys[col];
+
+        private bool TryGetArrowKey(byte virtualKey, out KeyViewModel? key)
+        {
+            key = null;
+            switch (virtualKey)
+            {
+                case 0x26:
+                    key = Rows[ArrowUpRowIndex].RightCluster!.Keys[1];
+                    return !key.IsGap;
+                case 0x28:
+                    key = Rows[ArrowKeysRowIndex].RightCluster!.Keys[1];
+                    return !key.IsGap;
+                case 0x25:
+                    key = Rows[ArrowKeysRowIndex].RightCluster!.Keys[0];
+                    return !key.IsGap;
+                case 0x27:
+                    key = Rows[ArrowKeysRowIndex].RightCluster!.Keys[2];
+                    return !key.IsGap;
+                default:
+                    return false;
+            }
+        }
+
+        private void SendArrowKey(byte virtualKey)
+        {
+            SendVirtualKey(virtualKey);
+            if (TryGetArrowKey(virtualKey, out var key) && key != null)
+                PulseArrowKey(key);
+        }
+
+        private void PulseArrowKey(KeyViewModel key)
+        {
+            _arrowPulseTimer?.Stop();
+
+            foreach (var k in EnumerateAllKeys())
+                k.IsSelected = false;
+
+            key.IsSelected = true;
+
+            _arrowPulseTimer ??= new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(175) };
+            _arrowPulseTimer.Tick -= OnArrowPulseTimerTick;
+            _arrowPulseTimer.Tick += OnArrowPulseTimerTick;
+            _arrowPulseTimer.Start();
+        }
+
+        private void OnArrowPulseTimerTick(object? sender, EventArgs e)
+        {
+            _arrowPulseTimer?.Stop();
+            UpdateSelection();
+        }
+
+        private void MoveNavClusterUp()
+        {
+            _navRow = (_navRow + NavClusterRowCount - 1) % NavClusterRowCount;
+            UpdateSelection();
+        }
+
+        private void MoveNavClusterDown()
+        {
+            _navRow = (_navRow + 1) % NavClusterRowCount;
+            UpdateSelection();
+        }
+
+        private void MoveNavClusterLeft()
+        {
+            _navCol = (_navCol + NavClusterRowCount - 1) % NavClusterRowCount;
+            UpdateSelection();
+        }
+
+        private void MoveNavClusterRight()
+        {
+            _navCol = (_navCol + 1) % NavClusterRowCount;
+            UpdateSelection();
+        }
+
+        private int LastNavigableRowIndex => Rows.Count - 1;
+
+        private bool IsRowInWrapRange(int row) =>
+            row >= FirstNavigableRowIndex && row <= LastNavigableRowIndex;
+
+        private bool IsValidNavigationRow(int row) =>
+            row == TopRowIndex || IsRowInWrapRange(row);
+
+        private static bool IsExcludedFromNavigation(KeyViewModel key)
+        {
+            if (key.IsGap)
+                return true;
+
+            var label = key.Label;
+            if (string.IsNullOrEmpty(label))
+                return false;
+
+            return ExcludedNavLabels.Contains(label);
+        }
+
+        private IReadOnlyList<KeyViewModel> GetNavigableKeys(int row)
+        {
+            if (row == TopRowIndex)
+                return Rows[TopRowIndex].Keys.Where(k => !k.IsGap).ToList();
+
+            if (!IsRowInWrapRange(row))
+                return Array.Empty<KeyViewModel>();
+
+            return Rows[row].Keys.Where(k => !IsExcludedFromNavigation(k)).ToList();
+        }
+
+        private void EnsureValidNavigationRow()
+        {
+            if (!IsValidNavigationRow(_currentRow))
+                _currentRow = FirstNavigableRowIndex;
+        }
 
         private void MoveUp()
         {
-            if (_focusArea == KeyboardFocusArea.Main)
+            if (_currentRow == TopRowIndex)
             {
-                if (_currentRow > 0)
-                {
-                    _currentRow--;
-                    ClampColumnForCurrentFocus();
-                }
-            }
-            else if (_currentRow > 0)
-            {
-                _currentRow--;
+                _currentRow = LastNavigableRowIndex;
                 ClampColumnForCurrentFocus();
+                UpdateSelection();
+                return;
             }
 
+            EnsureValidNavigationRow();
+
+            var keys = GetNavigableKeys(_currentRow);
+            if (keys.Count == 0)
+                return;
+
+            if (_currentRow == FirstNavigableRowIndex)
+                _currentRow = TopRowIndex;
+            else
+                _currentRow--;
+
+            ClampColumnForCurrentFocus();
             UpdateSelection();
         }
 
         private void MoveDown()
         {
-            if (_focusArea == KeyboardFocusArea.Main)
+            if (_currentRow == TopRowIndex)
             {
-                if (_currentRow < Rows.Count - 1)
-                {
-                    _currentRow++;
-                    ClampColumnForCurrentFocus();
-                }
-            }
-            else if (_currentRow < Rows.Count - 1)
-            {
-                _currentRow++;
-                while (_currentRow < Rows.Count && !RowHasRightCluster(_currentRow))
-                    _currentRow++;
+                _currentRow = FirstNavigableRowIndex;
                 ClampColumnForCurrentFocus();
+                UpdateSelection();
+                return;
             }
 
+            EnsureValidNavigationRow();
+
+            var keys = GetNavigableKeys(_currentRow);
+            if (keys.Count == 0)
+                return;
+
+            if (_currentRow < LastNavigableRowIndex)
+                _currentRow++;
+            else
+                _currentRow = FirstNavigableRowIndex;
+
+            ClampColumnForCurrentFocus();
             UpdateSelection();
         }
 
         private void MoveLeft()
         {
-            if (_focusArea == KeyboardFocusArea.Right)
-            {
-                if (_currentCol > 0)
-                {
-                    _currentCol--;
-                }
-                else
-                {
-                    _focusArea = KeyboardFocusArea.Main;
-                    var keys = GetNavigableKeys(KeyboardFocusArea.Main, _currentRow);
-                    _currentCol = Math.Max(0, keys.Count - 1);
-                }
-            }
-            else if (_currentCol > 0)
-            {
+            EnsureValidNavigationRow();
+
+            var keys = GetNavigableKeys(_currentRow);
+            if (keys.Count == 0)
+                return;
+
+            if (_currentCol > 0)
                 _currentCol--;
-            }
-            else if (_currentRow > 0)
-            {
-                _currentRow--;
-                var keys = GetNavigableKeys(KeyboardFocusArea.Main, _currentRow);
-                _currentCol = Math.Max(0, keys.Count - 1);
-            }
+            else
+                _currentCol = keys.Count - 1;
 
             UpdateSelection();
         }
 
         private void MoveRight()
         {
-            if (_focusArea == KeyboardFocusArea.Main)
-            {
-                var keys = GetNavigableKeys(KeyboardFocusArea.Main, _currentRow);
-                if (_currentCol < keys.Count - 1)
-                {
-                    _currentCol++;
-                }
-                else if (RowHasRightCluster(_currentRow))
-                {
-                    _focusArea = KeyboardFocusArea.Right;
-                    _currentCol = 0;
-                    ClampColumnForCurrentFocus();
-                }
-                else if (_currentRow < Rows.Count - 1)
-                {
-                    _currentRow++;
-                    _currentCol = 0;
-                }
-            }
+            EnsureValidNavigationRow();
+
+            var keys = GetNavigableKeys(_currentRow);
+            if (keys.Count == 0)
+                return;
+
+            if (_currentCol < keys.Count - 1)
+                _currentCol++;
             else
-            {
-                var keys = GetNavigableKeys(KeyboardFocusArea.Right, _currentRow);
-                if (_currentCol < keys.Count - 1)
-                {
-                    _currentCol++;
-                }
-                else if (_currentRow < Rows.Count - 1)
-                {
-                    _currentRow++;
-                    while (_currentRow < Rows.Count && !RowHasRightCluster(_currentRow))
-                        _currentRow++;
-                    _currentCol = 0;
-                    ClampColumnForCurrentFocus();
-                }
-            }
+                _currentCol = 0;
 
             UpdateSelection();
         }
 
         private void ClampColumnForCurrentFocus()
         {
-            var keys = _focusArea == KeyboardFocusArea.Main
-                ? GetNavigableKeys(KeyboardFocusArea.Main, _currentRow)
-                : GetNavigableKeys(KeyboardFocusArea.Right, _currentRow);
+            var keys = GetNavigableKeys(_currentRow);
             if (keys.Count == 0)
                 _currentCol = 0;
             else
@@ -511,14 +701,19 @@ namespace HaloShift
             foreach (var key in EnumerateAllKeys())
                 key.IsSelected = false;
 
-            var keys = _focusArea == KeyboardFocusArea.Main
-                ? GetNavigableKeys(KeyboardFocusArea.Main, _currentRow)
-                : GetNavigableKeys(KeyboardFocusArea.Right, _currentRow);
+            if (_zone == KeyboardNavigationZone.NavCluster)
+            {
+                _navRow = Math.Clamp(_navRow, 0, NavClusterRowCount - 1);
+                _navCol = Math.Clamp(_navCol, 0, NavClusterRowCount - 1);
+                GetNavClusterKey(_navRow, _navCol).IsSelected = true;
+                return;
+            }
+
+            EnsureValidNavigationRow();
+            var keys = GetNavigableKeys(_currentRow);
 
             if (keys.Count == 0)
                 return;
-
-            _currentRow = Math.Clamp(_currentRow, 0, Rows.Count - 1);
 
             _currentCol = Math.Clamp(_currentCol, 0, keys.Count - 1);
             keys[_currentCol].IsSelected = true;
@@ -526,14 +721,24 @@ namespace HaloShift
 
         private void SelectCurrentKey()
         {
-            var keys = _focusArea == KeyboardFocusArea.Main
-                ? GetNavigableKeys(KeyboardFocusArea.Main, _currentRow)
-                : GetNavigableKeys(KeyboardFocusArea.Right, _currentRow);
+            KeyViewModel key;
 
-            if (keys.Count == 0)
-                return;
+            if (_zone == KeyboardNavigationZone.NavCluster)
+            {
+                _navRow = Math.Clamp(_navRow, 0, NavClusterRowCount - 1);
+                _navCol = Math.Clamp(_navCol, 0, NavClusterRowCount - 1);
+                key = GetNavClusterKey(_navRow, _navCol);
+            }
+            else
+            {
+                EnsureValidNavigationRow();
+                var keys = GetNavigableKeys(_currentRow);
 
-            var key = keys[Math.Clamp(_currentCol, 0, keys.Count - 1)];
+                if (keys.Count == 0)
+                    return;
+
+                key = keys[Math.Clamp(_currentCol, 0, keys.Count - 1)];
+            }
 
             switch (key.KeyType)
             {
@@ -646,10 +851,39 @@ namespace HaloShift
                 InputSimulator.SendKey(0x11, false);
         }
 
-        private void HideKeyboard()
+        public void HideKeyboard()
         {
-            Hide();
+            if (!Dispatcher.UIThread.CheckAccess())
+            {
+                Dispatcher.UIThread.Post(HideKeyboard);
+                return;
+            }
+
+            if (!IsKeyboardOpen)
+                return;
+
+            ResetNavigationZone();
+            var previous = _previousWindow;
+            IsKeyboardOpen = false;
+            IsVisible = false;
             KeyboardClosed?.Invoke(this, EventArgs.Empty);
+            RestorePreviousFocus(previous);
+        }
+
+        private void RestorePreviousFocus(IntPtr previous)
+        {
+            if (previous == IntPtr.Zero)
+                return;
+
+            try
+            {
+                if (TryGetPlatformHandle() is { } handle && handle.Handle != previous)
+                    SetForegroundWindow(previous);
+            }
+            catch
+            {
+                // Best-effort focus restore
+            }
         }
 
         private void Backspace()
@@ -659,13 +893,41 @@ namespace HaloShift
 
         [DllImport("user32.dll")]
         private static extern short VkKeyScan(char ch);
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetForegroundWindow();
+
+        [DllImport("user32.dll")]
+        private static extern bool SetForegroundWindow(IntPtr hWnd);
     }
 
-    public class KeyboardRow
+    public class KeyboardRow : INotifyPropertyChanged
     {
+        private bool _highlightNavCluster;
+
         public ObservableCollection<KeyViewModel> Keys { get; } = new();
         public KeyboardClusterRow? RightCluster { get; set; }
         public bool HasRightCluster => RightCluster != null;
+
+        public bool HighlightNavCluster
+        {
+            get => _highlightNavCluster;
+            set
+            {
+                if (_highlightNavCluster == value)
+                    return;
+
+                _highlightNavCluster = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HighlightNavCluster)));
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(RightClusterBorderBrush)));
+            }
+        }
+
+        public IBrush RightClusterBorderBrush => HighlightNavCluster
+            ? VirtualKeyboardWindowDefaultBrushes.NavClusterActiveBorder
+            : VirtualKeyboardWindowDefaultBrushes.ClusterBorder;
+
+        public event PropertyChangedEventHandler? PropertyChanged;
     }
 
     public class KeyboardClusterRow
@@ -863,6 +1125,8 @@ namespace HaloShift
     {
         public static readonly IBrush KeyBackground = new SolidColorBrush(Color.Parse("#FF5C6370"));
         public static readonly IBrush KeyBorder = new SolidColorBrush(Color.Parse("#FF6B7280"));
+        public static readonly IBrush ClusterBorder = new SolidColorBrush(Color.Parse("#FF4B5563"));
+        public static readonly IBrush NavClusterActiveBorder = new SolidColorBrush(Color.Parse("#FF3B82F6"));
         public static readonly IBrush ActiveKeyBackground = new SolidColorBrush(Color.Parse("#FF4B5563"));
         public static readonly IBrush SelectedKeyBackground = new SolidColorBrush(Color.Parse("#FF2563EB"));
         public static readonly IBrush SelectedKeyBorder = new SolidColorBrush(Color.Parse("#FF3B82F6"));

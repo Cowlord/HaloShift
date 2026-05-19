@@ -1,206 +1,154 @@
 # HaloShift - Xbox Controller to Mouse/Keyboard Bridge
 
-A high-performance C# application that runs in the background and listens for Xbox controller input, allowing you to control your PC using an Xbox controller with smooth acceleration and low-latency input handling.
+A background Windows app that maps Xbox controller input to mouse and keyboard actions. HaloShift uses **Avalonia** for UI (tray icon, virtual keyboard, controls reference) and **SharpDX.XInput** for controller polling.
 
 ## Features
 
-### Dual Mode System
-- **Controller Mode**: App minimized, input released back to Steam/other applications
-- **Mouse Mode**: App takes foreground, controller drives mouse and keyboard inputs
+### Dual mode
+- **Controller mode**: Input passes through to games and Steam; HaloShift stays in the tray.
+- **Mouse mode**: Controller drives the cursor, clicks, scroll, and keyboard shortcuts.
 
-### Mode Switching
-- Press **LB + RB + Y** together to toggle between modes
-- Smooth transition with visual feedback in system tray
+### Mode switching
+- Press **View + Menu** together to toggle Controller ↔ Mouse mode.
+- Tray menu **Toggle Mode** does the same manually.
 
-### Mouse Mode Controls
-- **Left Stick**: Moves mouse cursor with smooth quadratic acceleration and deadzone
-- **RT (Right Trigger, hold)**: Left mouse button (press and hold to drag; release to let go)
-- **LT (Left Trigger, hold)**: Right mouse button (same hold/release behavior)
-- **LB (Left Bumper)**: Sends F11 keystroke (full-screen toggle)
-- **Y (alone)**: Opens Virtual Keyboard (for text input in games)
-- **D-Pad Up/Down**: Adjust mouse sensitivity
+### Mouse mode (keyboard closed)
 
-### Virtual Keyboard
-When in Mouse Mode, press **Y** to open a virtual on-screen keyboard that:
-- **Stays on top** of fullscreen games and applications
-- **Navigable with D-Pad** (Up/Down/Left/Right) - navigation wraps around rows and columns
-- **A button**: Select highlighted key or toggle SHIFT/CAPS
-- **X button**: Backspace
-- **B button**: Close keyboard
-- **Special Keys**:
-  - **SHIFT**: Toggle uppercase mode (highlights green when active)
-  - **CAPS**: Toggle caps lock mode (highlights green when active)
-  - **SPACE**: Large space bar, easily accessible from bottom row letters (C/V/B/N/M)
-- **Smart Navigation**:
-  - Left from 'A' → CAPS button | Right from CAPS → 'A'
-  - Left from 'Z' → SHIFT button | Right from SHIFT → 'Z'
-  - Down from C/V/B/N/M → SPACE bar
-  - Wrapping: End of row wraps to start, first row wraps to bottom
-- **Button Labels**: Each button shows which controller input to use (A button = Select, X button = Backspace, B button = Close)
-- **Disables sensitivity changes** while active to prevent conflicts
-- Sends keystrokes directly to the active game/application
-- **Keyboard support**: Arrow keys work for testing (in addition to D-Pad)
+| Input | Action |
+|--------|--------|
+| **Left stick** | Move cursor (quadratic acceleration, 15% deadzone) |
+| **RT (hold)** | Left mouse button |
+| **LT (hold)** | Right mouse button |
+| **D-Pad Up / Down** | Increase / decrease mouse sensitivity |
+| **Y** (alone) | Open virtual keyboard |
+| **X** | Escape |
+| **B** | Browser Back (closes About window when it is open) |
+| **LB** (alone) | F11 fullscreen |
+| **LB + View** | Show controls (About) window |
+| **LS click** | Windows key |
+| **RS click** | F5 |
+| **LT + RT + X** | Middle click |
+| **LT + RT + A** | Ctrl+W |
+| **LT + RT + B** | Alt+F4 |
 
-### Technical Highlights
-- High-performance polling (~120 Hz update timer) for responsive input handling
-- Smooth acceleration curve for natural mouse movement
-- 15% deadzone on analog sticks
-- Quadratic acceleration function for precise control
-- System tray integration with context menu
-- Minimizes to background in Controller Mode to avoid interference with Steam
+While the virtual keyboard is open, **LT/RT and sticks still move the mouse**; D-Pad navigation is handled by the keyboard instead of sensitivity.
 
-## System Requirements
+### Virtual keyboard (mouse mode)
 
-- Windows 10, version 1809 or later (required for .NET 8)
-- .NET 8.0 runtime (included when you use the self-contained publish output from this repo)
-- Xbox 360/Xbox One controller connected via USB or wireless adapter
-- Administrator privileges (recommended for best compatibility)
+Open with **Y** (no LB/RB). Stays topmost over fullscreen apps.
 
-## Installation
+| Input | Action |
+|--------|--------|
+| **D-Pad** | Move selection (wraps on rows/columns; TAB row ↔ function row rules apply) |
+| **A** | Press selected key |
+| **X** | Backspace |
+| **B** | Close keyboard |
+| **LB** | Toggle symbol layer (SYM ↔ letters) |
+| **Hold RB** (LB not held) | Arrow keys (Up/Left/Down/Right) with brief key highlight |
+| **LB + RB** (together) | Toggle nav-cluster mode: PRTSC, SCRLK, PAUSE, INS, HOME, PGUP, DEL, END, PGDN |
+| **LB + RB** again | Return to main typing keys |
 
-1. Build the project:
-   ```bash
-   dotnet build -c Release
-   ```
+Modifiers (Shift, Caps, Ctrl, Alt, Win) toggle on selection and show active state on keys.
 
-2. Place your `AppIcon.ico` file in the output directory (optional)
+### System tray
+- **Show Controls** — mapping reference window (also **LB + View** in mouse mode)
+- **Toggle Mode**
+- **Show Keyboard**
+- **Exit**
 
-3. Run the executable:
-   ```bash
-   HaloShift.exe
-   ```
+## Requirements
 
-4. The app appears as a system tray icon. Minimize or close the window - the app will continue running in the background.
+- Windows 10 1809+ (for .NET 8)
+- Xbox 360 / Xbox One / compatible XInput controller
+- .NET 8 SDK to build; published build is self-contained (`win-x64`)
 
-## Building from Source
+## Build and run
 
-Prerequisites:
-- Visual Studio 2022 or .NET SDK 8.0+
-- Windows development environment
-
-Build steps:
 ```bash
-cd HaloShift
 dotnet restore
 dotnet build -c Release
+dotnet run -c Release
 ```
 
-Output executable: `bin/Release/net8.0-windows/win-x64/publish/HaloShift.exe` (when publishing) or `bin/Release/net8.0-windows/HaloShift.exe` (framework-dependent build)
+Publish single-file (optional):
 
-## System Tray Menu
+```bash
+dotnet publish -c Release
+```
 
-Right-click or left-click the tray icon for:
-- **Show Controls**: Opens help window with all button mappings
-- **Toggle Mode**: Manually switch between modes
-- **Show Keyboard**: Opens the virtual keyboard
-- **Exit**: Closes the application
+Output: `bin/Release/net8.0-windows/win-x64/publish/HaloShift.exe`
+
+Sound files (`sound_*.wav`) and `assets/*_button.png` copy to the output directory automatically.
 
 ## Configuration
 
-To customize the behavior, edit the following in the source code:
+Persisted settings: mouse sensitivity (`AppSettings.json` via `AppSettings.cs`).
 
-### Input Sensitivity
-In `ModeManager.cs`, adjust `BASE_SENSITIVITY` inside `HandleLeftStickMovement`:
-```csharp
-const float BASE_SENSITIVITY = 60f; // Scales cursor speed before user sensitivity multiplier
-```
+Tunable constants in source:
 
-### Deadzone
-In `ModeManager.cs`, adjust `DEADZONE`:
-```csharp
-const float DEADZONE = 0.15f; // 15% of stick range
-```
-
-### Trigger Threshold
-In `ModeManager.cs`, adjust `TRIGGER_THRESHOLD`:
-```csharp
-const float TRIGGER_THRESHOLD = 0.5f; // 50% pressure
-```
-
-### Update Rate
-In `MainForm.cs`, adjust timer interval:
-```csharp
-_updateTimer.Interval = 8; // Milliseconds (~125 Hz)
-```
+| Setting | Location | Default |
+|---------|----------|---------|
+| Stick deadzone | `ModeManager.HandleLeftStickMovement` | `0.15f` |
+| Trigger threshold | `ModeManager` | `0.5f` |
+| Mode toggle | `ModeManager.Update` | View + Menu latch (one toggle per press) |
+| Poll interval | `App.axaml.cs` | `8` ms (~125 Hz) |
+| Sensitivity range | `ModeManager` | `0.5` – `3.0` |
 
 ## Architecture
 
-### Main Components
-
-- **Program.cs**: Application entry point (single-instance mutex; second launch exits quietly)
-- **MainForm.cs**: Windows Forms window and system tray integration
-- **ControllerManager.cs**: Xbox controller input polling and state management
-- **ModeManager.cs**: Mode switching logic and input handling
-- **InputSimulator.cs**: Mouse and keyboard input simulation via SendInput
-- **VirtualKeyboard.cs**: On-screen keyboard with d-pad navigation
-- **ControlsWindow.cs**: Help window showing all controller mappings
-
-### Key Classes
-
-#### ControllerManager
-Manages Xbox controller connection and state polling via SharpDX.XInput
-- `Update()`: Polls current controller state
-- `GetCurrentState()`: Returns latest gamepad state
-- `StateChanged` event: Fired when buttons, triggers, or either analog stick changes
-
-#### ModeManager
-Handles mode switching and mode-specific input processing
-- `SwitchMode()`: Toggles between Controller and Mouse modes
-- `Update()`: Checks for mode switch input combination
-- `HandleMouseModeInput()`: Processes mouse/keyboard input when in Mouse Mode
-- `ModeChanged` event: Fired when mode changes
-
-#### InputSimulator
-Uses Windows SendInput API for mouse and keyboard automation
-- `MoveMouse()`: Relative mouse movement
-- `LeftClick() / RightClick()`: Full mouse click (down+up); triggers use `LeftMouseButtonDown`/`Up` and `RightMouseButtonDown`/`Up` for hold/drag
-- `PressKey()`: Keyboard key press (down + up)
-
-#### VirtualKeyboard
-Topmost on-screen keyboard for text input in fullscreen games
-- `HandleInput()`: Processes d-pad and button input for navigation
-- `ShowKeyboard()`: Displays the keyboard window
-- `SendKeyToSystem()`: Transmits typed characters to active application
-- Remains visible over fullscreen games using `HWND_TOPMOST`
-- Disables sensitivity adjustment while active
-
-## Performance Considerations
-
-- Update loop uses an 8 ms timer (~125 Hz) for responsive input
-- Quadratic acceleration curve provides smooth but controlled movement
-- Analog stick deadzone (15%) prevents drift
-- Mouse position queries are minimal to reduce latency
-- All input is processed on high-priority update thread
+```
+Program.cs          → Avalonia host, single-instance mutex
+App.axaml.cs        → Poll loop, wires tray / modes / overlays
+ControllerManager.cs → XInput polling
+ModeManager.cs      → Mode toggle, mouse-mode mappings, keyboard/controls events
+InputSimulator.cs   → SendInput mouse/keyboard
+UI/
+  MainWindow        → Hidden host window
+  TrayIconManager   → Native tray menu
+  ControlsWindow    → Controller mapping reference (ABXY assets)
+  VirtualKeyboardWindow → On-screen keyboard + navigation zones
+  SensitivityOverlayWindow → Brief sensitivity feedback
+Win32Sound.cs       → Mode-change sounds
+```
 
 ## Troubleshooting
 
-### Controller Not Detected
-1. Ensure Xbox controller is connected and recognized by Windows
-2. Test in Windows Game Controller settings
-3. Check Device Manager for driver issues
-4. Restart HaloShift application
+**Controller not detected** — Check Windows controller settings and USB/wireless connection; restart HaloShift.
 
-### Mouse Movement Jerky
-1. Increase `SENSITIVITY` value for smoother acceleration
-2. Check for other mouse control software that might conflict
-3. Reduce update timer interval (lower = more responsive but uses more CPU)
+**Mode will not switch** — Press **View + Menu** together (both at once). Do not use START alone for mode toggle.
 
-### Mode Toggle Not Working
-1. Ensure all three buttons (LB, RB, Y) are pressed simultaneously
-2. Try holding for 100ms before releasing
-3. Check controller battery level
+**Controls window opens unexpectedly** — Use **LB + View**, not START/Menu alone (START is only used with View for mode toggle).
 
-### AppIcon.ico Not Loading
-1. Ensure AppIcon.ico is in the same directory as HaloShift.exe
-2. Icon file should be 32x32 or larger
-3. App will fall back to default Windows icon if file is missing
+**Virtual keyboard: nav cluster** — Press **LB + RB at the same time**; D-Pad moves the 3×3 cluster; **A** types the key.
 
-## License
-
-Designed for personal use with Xbox controllers on Windows PC.
+**Jerky mouse** — Raise sensitivity with D-Pad Up or adjust `BASE_SENSITIVITY` in `ModeManager.cs`.
 
 ## Dependencies
 
-- SharpDX.XInput (4.2.0): Xbox controller input
-- .NET 8.0 Windows Forms: UI and windowing
-- Windows SendInput API: Input simulation
+- Avalonia 11 (desktop UI)
+- SharpDX.XInput 4.2.0
+
+## License
+
+Personal use on Windows with Xbox controllers.
+
+---
+
+## Appendix: Changes from earlier documentation
+
+The repo previously shipped several overlapping `.md` files (`START_HERE.md`, `INDEX.md`, `PROJECT_SUMMARY.md`, `QUICK_REFERENCE.md`, `SETUP.md`, `DELIVERABLES.md`, `IMPLEMENTATION_COMPLETE.md`, `VIRTUAL_KEYBOARD_FEATURE.md`). Those described an older **Windows Forms** stack and outdated controls. They have been **removed**; this README is the single reference.
+
+| Topic | Old docs | Current behavior |
+|--------|----------|------------------|
+| UI framework | Windows Forms (`MainForm.cs`) | **Avalonia 11** (`App.axaml.cs`, `UI/*`) |
+| .NET version | .NET 6 | **.NET 8** (`net8.0-windows`) |
+| Mode toggle | Share button, or LB+RB+Y | **View + Menu** together (instant latch) |
+| Open controls / About | START alone (brief regression) | **LB + View**; **B** closes About |
+| Virtual keyboard code | `VirtualKeyboard.cs` | `UI/VirtualKeyboardWindow.axaml(.cs)` |
+| Keyboard navigation | Simple row wrap only | Wrap + function row access; **nav cluster** (LB+RB); **hold RB** for arrows |
+| D-Pad in mouse mode | Up/Down = sensitivity only | Same when keyboard closed; D-Pad navigates keyboard when open |
+| Help UI | `ControlsWindow.cs` text only | `ControlsWindow.axaml` with sections + **ABXY** images from `assets/` |
+| Architecture entry | `Program` + `MainForm` timer | `App` **DispatcherTimer** poll + tray-driven lifetime |
+| Docs maintenance | 9 markdown files | **README.md** only |
+
+If you need historical detail, use git history on the deleted files.

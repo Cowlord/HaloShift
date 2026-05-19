@@ -25,16 +25,13 @@ namespace HaloShift
         public event EventHandler<ModeChangedEventArgs>? ModeChanged;
         public event EventHandler<SensitivityChangedEventArgs>? SensitivityChanged;
         public event EventHandler? ShowKeyboardRequested;
+        public event EventHandler? ShowControlsRequested;
 
         public Action<float>? OnSensitivityPersist { get; set; }
 
         private const float TRIGGER_THRESHOLD = 0.5f; // Normalized: 0.0 to 1.0
 
-        /// <summary>How long View+Menu must be held before the mode toggles (milliseconds).</summary>
-        private const double ModeToggleHoldMs = 0.0;
-
-        private DateTime? _viewMenuHoldStartedUtc;
-        private bool _viewMenuHoldToggleFired;
+        private bool _viewMenuComboLatched;
         private bool _f11ButtonWasPressed = false;
         private bool _xButtonWasPressed = false;
         private bool _altF4ComboWasPressed = false;
@@ -46,6 +43,7 @@ namespace HaloShift
         private bool _dpadUpWasPressed = false;
         private bool _dpadDownWasPressed = false;
         private bool _yButtonWasPressed = false;
+        private bool _lbViewComboWasPressed = false;
 
         private bool _prevWantLeftMouseDown;
         private bool _prevWantRightMouseDown;
@@ -58,9 +56,14 @@ namespace HaloShift
 
         public float MouseSensitivity => _mouseSensitivity;
 
+        public void SetMouseSensitivity(float sensitivity)
+        {
+            _mouseSensitivity = Math.Clamp(sensitivity, MIN_SENSITIVITY, MAX_SENSITIVITY);
+        }
+
         public void Update(Gamepad gamepad)
         {
-            // Mode toggle: hold View (Back) + Menu (Start) — XInput names
+            // Mode toggle: press View (Back) + Menu (Start) together — XInput names
             bool lb = (gamepad.Buttons & GamepadButtonFlags.LeftShoulder) != 0;
             bool rb = (gamepad.Buttons & GamepadButtonFlags.RightShoulder) != 0;
             bool y = (gamepad.Buttons & GamepadButtonFlags.Y) != 0;
@@ -70,19 +73,15 @@ namespace HaloShift
 
             if (viewMenuHeld)
             {
-                if (_viewMenuHoldStartedUtc == null)
-                    _viewMenuHoldStartedUtc = DateTime.UtcNow;
-                else if (!_viewMenuHoldToggleFired &&
-                         (DateTime.UtcNow - _viewMenuHoldStartedUtc.Value).TotalMilliseconds >= ModeToggleHoldMs)
+                if (!_viewMenuComboLatched)
                 {
                     SwitchMode(ModeChangeInitiator.Gamepad);
-                    _viewMenuHoldToggleFired = true;
+                    _viewMenuComboLatched = true;
                 }
             }
             else
             {
-                _viewMenuHoldStartedUtc = null;
-                _viewMenuHoldToggleFired = false;
+                _viewMenuComboLatched = false;
             }
 
             // Check for Y button alone (show keyboard) - only in Mouse mode
@@ -112,8 +111,7 @@ namespace HaloShift
 
         private void ResetTransientButtonStates()
         {
-            _viewMenuHoldStartedUtc = null;
-            _viewMenuHoldToggleFired = false;
+            _viewMenuComboLatched = false;
             _f11ButtonWasPressed = false;
             _xButtonWasPressed = false;
             _altF4ComboWasPressed = false;
@@ -125,8 +123,29 @@ namespace HaloShift
             _dpadUpWasPressed = false;
             _dpadDownWasPressed = false;
             _yButtonWasPressed = false;
+            _lbViewComboWasPressed = false;
             _prevWantLeftMouseDown = false;
             _prevWantRightMouseDown = false;
+        }
+
+        /// <summary>
+        /// After the virtual keyboard closes, ignore held buttons until they are released
+        /// (e.g. B was used to dismiss the keyboard and must not trigger mouse-mode actions).
+        /// </summary>
+        public void SuppressButtonEdgesUntilRelease()
+        {
+            _f11ButtonWasPressed = true;
+            _xButtonWasPressed = true;
+            _altF4ComboWasPressed = true;
+            _ctrlWComboWasPressed = true;
+            _bButtonWasPressed = true;
+            _middleClickComboWasPressed = true;
+            _rightStickWasPressed = true;
+            _leftStickWasPressed = true;
+            _dpadUpWasPressed = true;
+            _dpadDownWasPressed = true;
+            _yButtonWasPressed = true;
+            _lbViewComboWasPressed = true;
         }
 
         public void ReleaseHeldMouseButtons()
@@ -193,6 +212,13 @@ namespace HaloShift
             bool a = (gamepad.Buttons & GamepadButtonFlags.A) != 0;
             bool rightStickClick = (gamepad.Buttons & GamepadButtonFlags.RightThumb) != 0;
             bool leftStickClick = (gamepad.Buttons & GamepadButtonFlags.LeftThumb) != 0;
+            bool view = (gamepad.Buttons & GamepadButtonFlags.Back) != 0;
+
+            // LB + View → show controls (About)
+            bool lbViewCombo = lb && view && !rb && !y;
+            if (lbViewCombo && !_lbViewComboWasPressed)
+                ShowControlsRequested?.Invoke(this, EventArgs.Empty);
+            _lbViewComboWasPressed = lbViewCombo;
 
             // Get D-Pad states
             bool dpadUp = (gamepad.Buttons & GamepadButtonFlags.DPadUp) != 0;
@@ -288,11 +314,13 @@ namespace HaloShift
             }
             _ctrlWComboWasPressed = ctrlWCombo;
 
-            // B → Browser Back (only if not part of a combo)
+            // B → close controls, or Browser Back (only if not part of a combo)
             if (b && !ltPressed && !rtPressed && !_bButtonWasPressed)
             {
-                // VK_BROWSER_BACK = 0xA6
-                InputSimulator.PressKey(0xA6);
+                if (ControlsWindow.IsOpen)
+                    ControlsWindow.CloseIfOpen();
+                else
+                    InputSimulator.PressKey(0xA6); // VK_BROWSER_BACK
             }
             _bButtonWasPressed = b;
 
@@ -312,8 +340,8 @@ namespace HaloShift
             }
             _leftStickWasPressed = leftStickClick;
 
-            // LB → send F11 (full-screen toggle) when not combined with RB or Y
-            bool lbAlone = lb && !rb && !y;
+            // LB → send F11 (full-screen toggle) when not combined with RB, Y, or View
+            bool lbAlone = lb && !rb && !y && !view;
 
             // Only trigger F11 on the transition from unpressed to pressed
             if (lbAlone && !_f11ButtonWasPressed)

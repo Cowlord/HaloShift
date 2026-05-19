@@ -16,7 +16,7 @@ namespace HaloShift
         private readonly TrayIcon _trayIcon;
         private DateTime? _lastTrayClickUtc;
 
-        public event EventHandler? AboutRequested;
+        public event EventHandler? ShowControlsRequested;
         public event EventHandler? ToggleModeRequested;
         public event EventHandler? ShowKeyboardRequested;
         public event EventHandler? ExitRequested;
@@ -33,9 +33,9 @@ namespace HaloShift
 
             var menu = new NativeMenu();
 
-            var aboutItem = new NativeMenuItem("About");
-            aboutItem.Click += (_, __) => AboutRequested?.Invoke(this, EventArgs.Empty);
-            menu.Items.Add(aboutItem);
+            var controlsItem = new NativeMenuItem("Show Controls");
+            controlsItem.Click += (_, __) => ShowControlsRequested?.Invoke(this, EventArgs.Empty);
+            menu.Items.Add(controlsItem);
 
             var toggleItem = new NativeMenuItem("Toggle Mode");
             toggleItem.Click += (_, __) => ToggleModeRequested?.Invoke(this, EventArgs.Empty);
@@ -57,7 +57,7 @@ namespace HaloShift
             _trayIcon.Menu = menu;
         }
 
-        public void AttachToWindow(Window window)
+        public void AttachToApplication()
         {
             var app = Application.Current;
             if (app == null)
@@ -83,12 +83,6 @@ namespace HaloShift
             _trayIcon.ToolTipText = tooltip;
         }
 
-        public void ShowBalloonTip(int durationMilliseconds, string title, string text)
-        {
-            // Avalonia currently does not support native balloon tips on all platforms,
-            // so this is a no-op placeholder for later platform-specific extension.
-        }
-
         private void OnTrayIconClicked(object? sender, EventArgs e)
         {
             var now = DateTime.UtcNow;
@@ -98,7 +92,7 @@ namespace HaloShift
                 _lastTrayClickUtc = null;
                 if (elapsedMs <= GetDoubleClickTime())
                 {
-                    AboutRequested?.Invoke(this, EventArgs.Empty);
+                    ShowControlsRequested?.Invoke(this, EventArgs.Empty);
                     return;
                 }
             }
