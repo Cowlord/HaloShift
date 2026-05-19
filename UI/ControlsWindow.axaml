@@ -144,7 +144,14 @@
                 </Grid>
                 <Grid ColumnDefinitions="40,88,*" Margin="0,2">
                   <TextBlock Grid.Column="1" Text="LB + View" Theme="{StaticResource MappingLabel}" />
-                  <TextBlock Grid.Column="2" Text="Show controls (About)" Theme="{StaticResource MappingAction}" />
+                  <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                    <TextBlock Text="Show controls (About)" Theme="{StaticResource MappingAction}" />
+                    <TextBlock Text="no RB or Y"
+                               Foreground="{StaticResource TextFootnote}"
+                               FontSize="9"
+                               HorizontalAlignment="Right"
+                               Margin="0,2,0,0" />
+                  </StackPanel>
                 </Grid>
                 <Grid ColumnDefinitions="40,88,*" Margin="0,2">
                   <TextBlock Grid.Column="1" Text="LB" Theme="{StaticResource MappingLabel}" />
