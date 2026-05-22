@@ -3,7 +3,7 @@
         x:Class="HaloShift.ControlsWindow"
         Title="HaloShift - Controller Mappings"
         Width="900"
-        Height="720"
+        Height="780"
         CanResize="False"
         ShowInTaskbar="False"
         WindowStartupLocation="CenterScreen"
@@ -111,20 +111,17 @@
       </Border>
 
       <Grid Grid.Row="1" Margin="20,16,20,16">
-        <Grid RowDefinitions="Auto,*" RowSpacing="12">
+        <Grid RowDefinitions="Auto,1.2*" RowSpacing="12">
           <!-- Top section: 3 columns -->
           <Grid Grid.Row="0" ColumnDefinitions="*,*,*" ColumnSpacing="12">
             <!-- GENERAL -->
             <Border Grid.Column="0" Theme="{StaticResource SectionPanel}">
               <StackPanel Spacing="8">
                 <TextBlock Text="GENERAL" Theme="{StaticResource SectionHeader}" />
-                <Grid ColumnDefinitions="100,*" Margin="0,0,0,4">
-                  <TextBlock Grid.Column="0" Text="View + Menu" Theme="{StaticResource MappingLabel}" />
-                  <TextBlock Grid.Column="1" Text="Toggle mode" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" TextAlignment="Left" />
+                <Grid ColumnDefinitions="32,*" Margin="0,0,0,4">
+                  <Image Grid.Column="0" Theme="{StaticResource ButtonIcon}" Source="avares://HaloShift/assets/View.png" />
+                  <TextBlock Grid.Column="1" Text="Hold (0.7s) — Toggle Mode" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" TextAlignment="Left" VerticalAlignment="Center" />
                 </Grid>
-                <TextBlock Text="Press together to switch Controller ↔ Mouse" 
-                           Theme="{StaticResource MappingFootnote}" 
-                           Margin="0,0,0,0" />
               </StackPanel>
             </Border>
 
@@ -132,21 +129,21 @@
             <Border Grid.Column="1" Theme="{StaticResource SectionPanel}">
               <StackPanel Spacing="6">
                 <TextBlock Text="MOUSE CONTROLS" Theme="{StaticResource SectionHeader}" />
-                <Grid ColumnDefinitions="90,*" Margin="0,0,0,2">
-                  <TextBlock Grid.Column="0" Text="Left stick" Theme="{StaticResource MappingLabel}" />
-                  <TextBlock Grid.Column="1" Text="Move cursor" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" TextAlignment="Left" />
+                <Grid ColumnDefinitions="32,*" Margin="0,0,0,2">
+                  <Image Grid.Column="0" Theme="{StaticResource ButtonIcon}" Source="avares://HaloShift/assets/Left Stick.png" />
+                  <TextBlock Grid.Column="1" Text="Move Cursor" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" TextAlignment="Left" VerticalAlignment="Center" />
                 </Grid>
-                <Grid ColumnDefinitions="90,*" Margin="0,0,0,2">
-                  <TextBlock Grid.Column="0" Text="Right stick" Theme="{StaticResource MappingLabel}" />
-                  <TextBlock Grid.Column="1" Text="Scroll wheel" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" TextAlignment="Left" />
+                <Grid ColumnDefinitions="32,*" Margin="0,0,0,2">
+                  <Image Grid.Column="0" Theme="{StaticResource ButtonIcon}" Source="avares://HaloShift/assets/Right Stick.png" />
+                  <TextBlock Grid.Column="1" Text="Scroll Wheel" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" TextAlignment="Left" VerticalAlignment="Center" />
                 </Grid>
-                <Grid ColumnDefinitions="90,*" Margin="0,0,0,2">
-                  <TextBlock Grid.Column="0" Text="RT (hold)" Theme="{StaticResource MappingLabel}" />
-                  <TextBlock Grid.Column="1" Text="Left click" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" TextAlignment="Left" />
+                <Grid ColumnDefinitions="32,*" Margin="0,0,0,2">
+                  <Image Grid.Column="0" Theme="{StaticResource ButtonIcon}" Source="avares://HaloShift/assets/RT.png" />
+                  <TextBlock Grid.Column="1" Text="Hold — Left Click" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" TextAlignment="Left" VerticalAlignment="Center" />
                 </Grid>
-                <Grid ColumnDefinitions="90,*" Margin="0,0,0,2">
-                  <TextBlock Grid.Column="0" Text="LT (hold)" Theme="{StaticResource MappingLabel}" />
-                  <TextBlock Grid.Column="1" Text="Right click" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" TextAlignment="Left" />
+                <Grid ColumnDefinitions="32,*" Margin="0,0,0,2">
+                  <Image Grid.Column="0" Theme="{StaticResource ButtonIcon}" Source="avares://HaloShift/assets/LT.png" />
+                  <TextBlock Grid.Column="1" Text="Hold — Right Click" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" TextAlignment="Left" VerticalAlignment="Center" />
                 </Grid>
               </StackPanel>
             </Border>
@@ -157,7 +154,7 @@
                 <TextBlock Text="FACE BUTTONS" Theme="{StaticResource SectionHeader}" />
                 <Grid ColumnDefinitions="32,*" Margin="0,0,0,2">
                   <Image Grid.Column="0" Theme="{StaticResource ButtonIcon}" Source="avares://HaloShift/assets/Y_button.png" />
-                  <TextBlock Grid.Column="1" Text="Open keyboard" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" TextAlignment="Left" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Text="Open Keyboard" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" TextAlignment="Left" VerticalAlignment="Center" />
                 </Grid>
                 <Grid ColumnDefinitions="32,*" Margin="0,0,0,2">
                   <Image Grid.Column="0" Theme="{StaticResource ButtonIcon}" Source="avares://HaloShift/assets/X_button.png" />
@@ -165,7 +162,7 @@
                 </Grid>
                 <Grid ColumnDefinitions="32,*" Margin="0,0,0,2">
                   <Image Grid.Column="0" Theme="{StaticResource ButtonIcon}" Source="avares://HaloShift/assets/B_button.png" />
-                  <TextBlock Grid.Column="1" Text="Browser back" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" TextAlignment="Left" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Text="Browser Back" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" TextAlignment="Left" VerticalAlignment="Center" />
                 </Grid>
                 <Grid ColumnDefinitions="32,*" Margin="0,0,0,2">
                   <Image Grid.Column="0" Theme="{StaticResource ButtonIcon}" Source="avares://HaloShift/assets/A_button.png" />
@@ -176,41 +173,45 @@
           </Grid>
 
           <!-- Bottom section: 2 columns -->
-          <Grid Grid.Row="1" ColumnDefinitions="1.2*,*" ColumnSpacing="12">
+          <Grid Grid.Row="1" ColumnDefinitions="1.3*,*" ColumnSpacing="12">
             <!-- VIRTUAL KEYBOARD -->
             <Border Grid.Column="0" Theme="{StaticResource SectionPanel}" BorderBrush="{StaticResource AccentGreen}" BorderThickness="2">
               <StackPanel Spacing="8">
                 <StackPanel Orientation="Horizontal" Spacing="10">
-                  <TextBlock Text="VIRTUAL KEYBOARD" Theme="{StaticResource SectionHeader}" Margin="0" />
+                  <TextBlock Text="Virtual Keyboard" Theme="{StaticResource SectionHeader}" Margin="0" />
                   <Border Background="#3322AA22" BorderBrush="{StaticResource AccentGreen}" BorderThickness="1" Padding="8,3" VerticalAlignment="Center" CornerRadius="2">
-                    <TextBlock Text="WHEN OPEN" Foreground="{StaticResource AccentGreen}" FontSize="9" FontWeight="Bold" LetterSpacing="0.5" />
+                    <TextBlock Text="When Open" Foreground="{StaticResource AccentGreen}" FontSize="9" FontWeight="Bold" LetterSpacing="0.5" />
                   </Border>
                 </StackPanel>
-                
+
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
                   <StackPanel Grid.Column="0" Spacing="5">
-                    <Grid ColumnDefinitions="80,*" Margin="0,0,0,3">
-                      <TextBlock Grid.Column="0" Text="D-Pad" Theme="{StaticResource MappingLabel}" />
-                      <TextBlock Grid.Column="1" Text="Navigate keys" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" TextAlignment="Left" />
+                    <Grid ColumnDefinitions="32,*" Margin="0,0,0,3">
+                      <Image Grid.Column="0" Theme="{StaticResource ButtonIcon}" Source="avares://HaloShift/assets/D-Pad.png" />
+                      <TextBlock Grid.Column="1" Text="Navigate Keys" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" VerticalAlignment="Center" />
                     </Grid>
-                    <Grid ColumnDefinitions="80,*" Margin="0,0,0,3">
-                      <TextBlock Grid.Column="0" Text="LB" Theme="{StaticResource MappingLabel}" />
-                      <TextBlock Grid.Column="1" Text="Toggle symbols" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" TextAlignment="Left" />
+                    <Grid ColumnDefinitions="32,*" Margin="0,0,0,3">
+                      <Image Grid.Column="0" Theme="{StaticResource ButtonIcon}" Source="avares://HaloShift/assets/LB.png" />
+                      <TextBlock Grid.Column="1" Text="Toggle Symbols" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" VerticalAlignment="Center" />
                     </Grid>
-                    <Grid ColumnDefinitions="80,*" Margin="0,0,0,3">
-                      <TextBlock Grid.Column="0" Text="RB (hold)" Theme="{StaticResource MappingLabel}" />
-                      <TextBlock Grid.Column="1" Text="Arrow keys" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" TextAlignment="Left" />
+                    <Grid ColumnDefinitions="32,*" Margin="0,0,0,3">
+                      <Image Grid.Column="0" Theme="{StaticResource ButtonIcon}" Source="avares://HaloShift/assets/RB.png" />
+                      <TextBlock Grid.Column="1" Text="Hold — Arrow Keys" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" VerticalAlignment="Center" />
                     </Grid>
-                    <Grid ColumnDefinitions="80,*" Margin="0,0,0,3">
-                      <TextBlock Grid.Column="0" Text="LB + RB" Theme="{StaticResource MappingLabel}" />
-                      <TextBlock Grid.Column="1" Text="Nav cluster" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" TextAlignment="Left" />
+                    <Grid ColumnDefinitions="60,*" Margin="0,0,0,3">
+                      <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="2">
+                        <Image Theme="{StaticResource ButtonIcon}" Source="avares://HaloShift/assets/LB.png" />
+                        <TextBlock Text="+" Foreground="{StaticResource TextSecondary}" FontSize="10" VerticalAlignment="Center" />
+                        <Image Theme="{StaticResource ButtonIcon}" Source="avares://HaloShift/assets/RB.png" />
+                      </StackPanel>
+                      <TextBlock Grid.Column="1" Text="Nav Cluster" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" VerticalAlignment="Center" />
                     </Grid>
                   </StackPanel>
 
                   <StackPanel Grid.Column="1" Spacing="5">
                     <Grid ColumnDefinitions="32,*" Margin="0,0,0,3">
                       <Image Grid.Column="0" Theme="{StaticResource ButtonIcon}" Source="avares://HaloShift/assets/A_button.png" />
-                      <TextBlock Grid.Column="1" Text="Select key" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="1" Text="Select Key" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" VerticalAlignment="Center" />
                     </Grid>
                     <Grid ColumnDefinitions="32,*" Margin="0,0,0,3">
                       <Image Grid.Column="0" Theme="{StaticResource ButtonIcon}" Source="avares://HaloShift/assets/X_button.png" />
@@ -218,71 +219,80 @@
                     </Grid>
                     <Grid ColumnDefinitions="32,*" Margin="0,0,0,3">
                       <Image Grid.Column="0" Theme="{StaticResource ButtonIcon}" Source="avares://HaloShift/assets/B_button.png" />
-                      <TextBlock Grid.Column="1" Text="Close keyboard" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="1" Text="Close Keyboard" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" VerticalAlignment="Center" />
                     </Grid>
                   </StackPanel>
                 </Grid>
-                
+
                 <Border Background="#FF141414" BorderBrush="#FF2A2A2A" BorderThickness="1" Padding="12,10" CornerRadius="3" Margin="0,4,0,0">
                   <TextBlock TextWrapping="Wrap" FontSize="10.5" Foreground="{StaticResource TextSecondary}">
                     <Run Text="Note: " FontWeight="Bold" Foreground="{StaticResource TextPrimary}" />
-                    <Run Text="Sticks and triggers remain active for cursor control and mouse buttons" />
+                    <Run Text="Sticks and triggers remain active for cursor control and mouse buttons." />
                   </TextBlock>
                 </Border>
               </StackPanel>
             </Border>
 
             <!-- SHORTCUTS & SPECIAL -->
-            <Border Grid.Column="1" Theme="{StaticResource SectionPanel}">
-              <StackPanel Spacing="8">
+            <Border Grid.Column="1" Theme="{StaticResource SectionPanel}" Padding="16,12,16,10">
+              <StackPanel Spacing="6">
                 <TextBlock Text="SHORTCUTS" Theme="{StaticResource SectionHeader}" />
-                
-                <StackPanel Spacing="6">
-                  <Grid ColumnDefinitions="90,*" Margin="0,0,0,2">
-                    <TextBlock Grid.Column="0" Text="LS click" Theme="{StaticResource MappingLabel}" />
-                    <TextBlock Grid.Column="1" Text="Windows key" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" TextAlignment="Left" />
+
+                <StackPanel Spacing="4">
+                  <Grid ColumnDefinitions="32,*" Margin="0,0,0,2">
+                    <Image Grid.Column="0" Theme="{StaticResource ButtonIcon}" Source="avares://HaloShift/assets/Left Stick.png" />
+                    <TextBlock Grid.Column="1" Text="Click — Windows Key" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" VerticalAlignment="Center" />
                   </Grid>
-                  <Grid ColumnDefinitions="90,*" Margin="0,0,0,2">
-                    <TextBlock Grid.Column="0" Text="RS click" Theme="{StaticResource MappingLabel}" />
-                    <TextBlock Grid.Column="1" Text="F5 (refresh)" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" TextAlignment="Left" />
+                  <Grid ColumnDefinitions="32,*" Margin="0,0,0,2">
+                    <Image Grid.Column="0" Theme="{StaticResource ButtonIcon}" Source="avares://HaloShift/assets/Right Stick.png" />
+                    <TextBlock Grid.Column="1" Text="Click — F5 (Refresh)" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" VerticalAlignment="Center" />
                   </Grid>
-                  <Grid ColumnDefinitions="90,*" Margin="0,0,0,2">
-                    <TextBlock Grid.Column="0" Text="LB + View" Theme="{StaticResource MappingLabel}" />
-                    <TextBlock Grid.Column="1" Text="Show controls" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" TextAlignment="Left" />
+                  <Grid ColumnDefinitions="70,*" Margin="0,0,0,2">
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="2">
+                      <Image Theme="{StaticResource ButtonIcon}" Source="avares://HaloShift/assets/LB.png" />
+                      <TextBlock Text="+" Foreground="{StaticResource TextSecondary}" FontSize="10" VerticalAlignment="Center" />
+                      <Image Theme="{StaticResource ButtonIcon}" Source="avares://HaloShift/assets/View.png" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Text="Show Controls" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" VerticalAlignment="Center" />
                   </Grid>
-                  <Grid ColumnDefinitions="90,*" Margin="0,0,0,2">
-                    <TextBlock Grid.Column="0" Text="LB alone" Theme="{StaticResource MappingLabel}" />
-                    <TextBlock Grid.Column="1" Text="F11 fullscreen" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" TextAlignment="Left" />
+                  <Grid ColumnDefinitions="32,*" Margin="0,0,0,2">
+                    <Image Grid.Column="0" Theme="{StaticResource ButtonIcon}" Source="avares://HaloShift/assets/LB.png" />
+                    <TextBlock Grid.Column="1" Text="Alone — F11 Fullscreen" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" VerticalAlignment="Center" />
                   </Grid>
-                  <Grid ColumnDefinitions="90,*" Margin="0,0,0,2">
-                    <TextBlock Grid.Column="0" Text="D-Pad ↑/↓" Theme="{StaticResource MappingLabel}" />
-                    <TextBlock Grid.Column="1" Text="Sensitivity" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" TextAlignment="Left" />
+                  <Grid ColumnDefinitions="32,*" Margin="0,0,0,2">
+                    <Image Grid.Column="0" Theme="{StaticResource ButtonIcon}" Source="avares://HaloShift/assets/D-Pad.png" />
+                    <TextBlock Grid.Column="1" Text="↑/↓ — Adjust Sensitivity" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" VerticalAlignment="Center" />
                   </Grid>
                 </StackPanel>
 
-                <TextBlock Text="COMBOS (LT + RT held)" 
+                <TextBlock Text="COMBOS (LT + RT Held)"
                            Foreground="{StaticResource AccentGreen}"
                            FontSize="10"
                            FontWeight="Bold"
-                           Margin="0,8,0,4"
+                           Margin="0,6,0,3"
                            LetterSpacing="0.5" />
-                
-                <StackPanel Spacing="5">
+
+                <StackPanel Spacing="3">
                   <Grid ColumnDefinitions="32,60,*" Margin="0,0,0,2">
                     <Image Grid.Column="0" Theme="{StaticResource ButtonIcon}" Source="avares://HaloShift/assets/X_button.png" />
-                    <TextBlock Grid.Column="1" Text="+ X" Theme="{StaticResource MappingLabel}" />
-                    <TextBlock Grid.Column="2" Text="Middle click" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="2" Text="Middle Click" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" VerticalAlignment="Center" />
                   </Grid>
                   <Grid ColumnDefinitions="32,60,*" Margin="0,0,0,2">
                     <Image Grid.Column="0" Theme="{StaticResource ButtonIcon}" Source="avares://HaloShift/assets/A_button.png" />
-                    <TextBlock Grid.Column="1" Text="+ A" Theme="{StaticResource MappingLabel}" />
                     <TextBlock Grid.Column="2" Text="Ctrl + W" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" VerticalAlignment="Center" />
                   </Grid>
                   <Grid ColumnDefinitions="32,60,*" Margin="0,0,0,2">
                     <Image Grid.Column="0" Theme="{StaticResource ButtonIcon}" Source="avares://HaloShift/assets/B_button.png" />
-                    <TextBlock Grid.Column="1" Text="+ B" Theme="{StaticResource MappingLabel}" />
                     <TextBlock Grid.Column="2" Text="Alt + F4" Theme="{StaticResource MappingAction}" HorizontalAlignment="Left" VerticalAlignment="Center" />
                   </Grid>
+                  <Border Background="#FF141414" BorderBrush="#FF2A2A2A" BorderThickness="1" Padding="8,6" CornerRadius="3" Margin="0,2,0,0">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <Image Theme="{StaticResource ButtonIcon}" Source="avares://HaloShift/assets/LT.png" />
+                      <TextBlock Text="+" Foreground="{StaticResource TextSecondary}" FontSize="10" VerticalAlignment="Center" />
+                      <Image Theme="{StaticResource ButtonIcon}" Source="avares://HaloShift/assets/RT.png" />
+                      <TextBlock Text="(held)" Foreground="{StaticResource TextMuted}" FontSize="9" VerticalAlignment="Center" />
+                    </StackPanel>
+                  </Border>
                 </StackPanel>
               </StackPanel>
             </Border>

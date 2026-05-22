@@ -9,7 +9,7 @@ A background Windows app that maps Xbox controller input to mouse and keyboard a
 - **Mouse mode**: Controller drives the cursor, clicks, scroll, and keyboard shortcuts.
 
 ### Mode switching
-- Press **View + Menu** together to toggle Controller ↔ Mouse mode.
+- Hold **View** for **1.5 seconds** to toggle Controller ↔ Mouse mode.
 - Tray menu **Toggle Mode** does the same manually.
 
 ### Mouse mode (keyboard closed)
@@ -90,7 +90,7 @@ Tunable constants in source:
 |---------|----------|---------|
 | Stick deadzone | `ModeManager.HandleLeftStickMovement` | `0.15f` |
 | Trigger threshold | `ModeManager` | `0.5f` |
-| Mode toggle | `ModeManager.Update` | View + Menu latch (one toggle per press) |
+| Mode toggle | `ModeManager.Update` | Hold View 1.5s (one toggle per hold) |
 | Poll interval | `App.axaml.cs` | `8` ms (~125 Hz) |
 | Sensitivity range | `ModeManager` | `0.5` – `3.0` |
 
@@ -115,9 +115,9 @@ Win32Sound.cs       → Mode-change sounds
 
 **Controller not detected** — Check Windows controller settings and USB/wireless connection; restart HaloShift.
 
-**Mode will not switch** — Press **View + Menu** together (both at once). Do not use START alone for mode toggle.
+**Mode will not switch** — Hold **View** for at least **1.5 seconds** (release and hold again if needed).
 
-**Controls window opens unexpectedly** — Use **LB + View**, not START/Menu alone (START is only used with View for mode toggle).
+**Controls window opens unexpectedly** — Use **LB + View**, not View alone (a long View hold toggles mode).
 
 **Virtual keyboard: nav cluster** — Press **LB + RB at the same time**; D-Pad moves the 3×3 cluster; **A** types the key.
 
@@ -142,7 +142,7 @@ The repo previously shipped several overlapping `.md` files (`START_HERE.md`, `I
 |--------|----------|------------------|
 | UI framework | Windows Forms (`MainForm.cs`) | **Avalonia 11** (`App.axaml.cs`, `UI/*`) |
 | .NET version | .NET 6 | **.NET 8** (`net8.0-windows`) |
-| Mode toggle | Share button, or LB+RB+Y | **View + Menu** together (instant latch) |
+| Mode toggle | Share button, or LB+RB+Y | **Hold View** 1.5s |
 | Open controls / About | START alone (brief regression) | **LB + View**; **B** closes About |
 | Virtual keyboard code | `VirtualKeyboard.cs` | `UI/VirtualKeyboardWindow.axaml(.cs)` |
 | Keyboard navigation | Simple row wrap only | Wrap + function row access; **nav cluster** (LB+RB); **hold RB** for arrows |

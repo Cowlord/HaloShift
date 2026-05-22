@@ -31,7 +31,9 @@ namespace HaloShift
 
         private const float TRIGGER_THRESHOLD = 0.5f; // Normalized: 0.0 to 1.0
 
-        private bool _viewMenuComboLatched;
+        private DateTime _viewHeldSince = DateTime.MinValue;
+        private bool _toggleFiredThisHold = false;
+        private const double TOGGLE_HOLD_MS = 700;
         private bool _f11ButtonWasPressed = false;
         private bool _xButtonWasPressed = false;
         private bool _altF4ComboWasPressed = false;
@@ -63,34 +65,32 @@ namespace HaloShift
 
         public void Update(Gamepad gamepad)
         {
-            // Mode toggle: press View (Back) + Menu (Start) together — XInput names
-            bool lb = (gamepad.Buttons & GamepadButtonFlags.LeftShoulder) != 0;
-            bool rb = (gamepad.Buttons & GamepadButtonFlags.RightShoulder) != 0;
-            bool y = (gamepad.Buttons & GamepadButtonFlags.Y) != 0;
             bool view = (gamepad.Buttons & GamepadButtonFlags.Back) != 0;
-            bool menu = (gamepad.Buttons & GamepadButtonFlags.Start) != 0;
-            bool viewMenuHeld = view && menu;
 
-            if (viewMenuHeld)
+            if (view)
             {
-                if (!_viewMenuComboLatched)
+                if (_viewHeldSince == DateTime.MinValue)
+                    _viewHeldSince = DateTime.UtcNow;
+
+                if (!_toggleFiredThisHold &&
+                    (DateTime.UtcNow - _viewHeldSince).TotalMilliseconds >= TOGGLE_HOLD_MS)
                 {
                     SwitchMode(ModeChangeInitiator.Gamepad);
-                    _viewMenuComboLatched = true;
+                    _toggleFiredThisHold = true;
                 }
             }
             else
             {
-                _viewMenuComboLatched = false;
+                _viewHeldSince = DateTime.MinValue;
+                _toggleFiredThisHold = false;
             }
 
-            // Check for Y button alone (show keyboard) - only in Mouse mode
-            bool yAlone = y && !lb && !rb;
-            if (yAlone && !_yButtonWasPressed && _currentMode == AppMode.Mouse)
+            bool y = (gamepad.Buttons & GamepadButtonFlags.Y) != 0;
+            if (y && !_yButtonWasPressed && _currentMode == AppMode.Mouse)
             {
                 ShowKeyboardRequested?.Invoke(this, EventArgs.Empty);
             }
-            _yButtonWasPressed = yAlone;
+            _yButtonWasPressed = y;
         }
 
         public void SwitchMode(ModeChangeInitiator initiator = ModeChangeInitiator.Gamepad)
@@ -111,7 +111,8 @@ namespace HaloShift
 
         private void ResetTransientButtonStates()
         {
-            _viewMenuComboLatched = false;
+            _viewHeldSince = DateTime.MinValue;
+            _toggleFiredThisHold = false;
             _f11ButtonWasPressed = false;
             _xButtonWasPressed = false;
             _altF4ComboWasPressed = false;
