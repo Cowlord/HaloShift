@@ -20,7 +20,7 @@ namespace HaloShift
             if (!File.Exists(path))
                 return;
 
-            PlaySound(path, IntPtr.Zero, SND_ASYNC | SND_NODEFAULT | SND_FILENAME | SND_SYSTEM);
+            PlaySound(path, IntPtr.Zero, SND_ASYNC | SND_NODEFAULT | SND_FILENAME);
         }
     }
 }
