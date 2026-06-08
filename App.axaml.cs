@@ -27,6 +27,11 @@ namespace HaloShift
 
         public override void OnFrameworkInitializationCompleted()
         {
+            // Initialize crash detection and restart management first
+            CrashHandler.Initialize();
+            RestartManager.StartWatcher();
+            RestartManager.ResetRestartCount();
+
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
                 _desktopLifetime = desktop;
@@ -35,6 +40,7 @@ namespace HaloShift
             }
 
             var settings = AppSettings.Load();
+            StartupManager.SetStartup(settings.StartOnBoot);
             _controllerManager = new ControllerManager();
             _modeManager = new ModeManager();
             _modeManager.SetMouseSensitivity(settings.MouseSensitivity);
@@ -185,6 +191,9 @@ namespace HaloShift
             _virtualKeyboard?.HideKeyboard();
             _sensitivityOverlay?.HideOverlay();
             _mainWindow?.Close();
+
+            // Clean shutdown - remove crash detection
+            CrashHandler.Shutdown();
         }
     }
 }

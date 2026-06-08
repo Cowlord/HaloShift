@@ -8,7 +8,8 @@
         ShowInTaskbar="False"
         WindowStartupLocation="CenterScreen"
         Background="#FF0D0D0D"
-        SystemDecorations="None">
+        SystemDecorations="None"
+        RequestedThemeVariant="Dark">
   <Window.Resources>
     <SolidColorBrush x:Key="BgPanel" Color="#FF1A1A1A" />
     <SolidColorBrush x:Key="BorderPanel" Color="#FF2A2A2A" />
@@ -304,23 +305,54 @@
               Background="#FF0D0D0D"
               BorderBrush="{StaticResource AccentGreen}"
               BorderThickness="0,2,0,0"
-              Padding="20,14">
-        <Button Content="CLOSE"
-                HorizontalAlignment="Center"
-                Width="140"
-                Height="42"
-                Background="{StaticResource AccentGreen}"
-                Foreground="#FF0D0D0D"
-                FontWeight="Bold"
-                FontSize="13"
-                CornerRadius="3"
-                Click="CloseButton_Click">
-          <Button.Styles>
-            <Style Selector="Button:pointerover">
-              <Setter Property="Background" Value="#FF2ACC2A" />
-            </Style>
-          </Button.Styles>
-        </Button>
+              Padding="20,10">
+        <Grid ColumnDefinitions="*,Auto,*" VerticalAlignment="Center">
+          <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+            <ToggleSwitch x:Name="StartOnBootToggle"
+                          OnContent=""
+                          OffContent=""
+                          VerticalAlignment="Center"
+                          IsCheckedChanged="StartOnBootToggle_Changed">
+              <ToggleSwitch.Styles>
+                <Style Selector="ToggleSwitch:checked /template/ Border#SwitchKnobBounds">
+                  <Setter Property="Background" Value="{StaticResource AccentGreen}" />
+                  <Setter Property="BorderBrush" Value="{StaticResource AccentGreen}" />
+                </Style>
+                <Style Selector="ToggleSwitch:checked:pointerover /template/ Border#SwitchKnobBounds">
+                  <Setter Property="Background" Value="#FF2ACC2A" />
+                  <Setter Property="BorderBrush" Value="#FF2ACC2A" />
+                </Style>
+              </ToggleSwitch.Styles>
+            </ToggleSwitch>
+            <StackPanel VerticalAlignment="Center" Spacing="2">
+              <TextBlock Text="Start on Boot"
+                         Foreground="{StaticResource TextPrimary}"
+                         FontSize="12"
+                         FontWeight="SemiBold" />
+              <TextBlock Text="Launch HaloShift when Windows starts"
+                         Foreground="{StaticResource TextMuted}"
+                         FontSize="10" />
+            </StackPanel>
+          </StackPanel>
+
+          <Button Grid.Column="1"
+                  Content="CLOSE"
+                  HorizontalAlignment="Center"
+                  Width="140"
+                  Height="42"
+                  Background="{StaticResource AccentGreen}"
+                  Foreground="#FF0D0D0D"
+                  FontWeight="Bold"
+                  FontSize="13"
+                  CornerRadius="3"
+                  Click="CloseButton_Click">
+            <Button.Styles>
+              <Style Selector="Button:pointerover">
+                <Setter Property="Background" Value="#FF2ACC2A" />
+              </Style>
+            </Button.Styles>
+          </Button>
+        </Grid>
       </Border>
     </Grid>
   </Border>

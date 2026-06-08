@@ -9,6 +9,7 @@ namespace HaloShift
         private const string SettingsFileName = "settings.json";
 
         public float MouseSensitivity { get; set; } = 0.5f;
+        public bool StartOnBoot { get; set; } = false;
 
         public static AppSettings Load()
         {
