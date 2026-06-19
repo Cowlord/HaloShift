@@ -1,8 +1,10 @@
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HaloShift", "HaloShift.csproj", "{91EE0B5D-7AB5-BF8E-A510-3296BEE01010}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HaloShift.Tests", "HaloShift.Tests\HaloShift.Tests.csproj", "{728C0E40-67CD-4A95-83DC-0213C4A627B5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -14,6 +16,10 @@ Global
 		{91EE0B5D-7AB5-BF8E-A510-3296BEE01010}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{91EE0B5D-7AB5-BF8E-A510-3296BEE01010}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{91EE0B5D-7AB5-BF8E-A510-3296BEE01010}.Release|Any CPU.Build.0 = Release|Any CPU
+		{728C0E40-67CD-4A95-83DC-0213C4A627B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{728C0E40-67CD-4A95-83DC-0213C4A627B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{728C0E40-67CD-4A95-83DC-0213C4A627B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{728C0E40-67CD-4A95-83DC-0213C4A627B5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
