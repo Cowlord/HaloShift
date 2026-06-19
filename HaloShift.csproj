@@ -31,6 +31,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="HaloShift.Tests\**" />
+    <Content Remove="HaloShift.Tests\**" />
+    <EmbeddedResource Remove="HaloShift.Tests\**" />
+    <AvaloniaResource Remove="HaloShift.Tests\**" />
+    <None Remove="HaloShift.Tests\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <AvaloniaResource Include="AppIcon.ico" />
     <Content Include="AppIcon.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
