@@ -26,15 +26,16 @@ namespace HaloShift
                 _playbackCts = cts;
             }
 
-            _ = Task.Run(() => PlayWavCore(path, cts.Token));
+            _ = Task.Run(() => PlayWavCore(path, cts));
         }
 
-        private static void PlayWavCore(string path, CancellationToken token)
+        private static void PlayWavCore(string path, CancellationTokenSource cts)
         {
             WasapiOut? output = null;
             AudioFileReader? reader = null;
             try
             {
+                var token = cts.Token;
                 reader = new AudioFileReader(path);
                 output = new WasapiOut(AudioClientShareMode.Shared, 100);
                 output.Init(reader);
@@ -58,6 +59,7 @@ namespace HaloShift
             {
                 output?.Dispose();
                 reader?.Dispose();
+                cts.Dispose();
             }
         }
     }
