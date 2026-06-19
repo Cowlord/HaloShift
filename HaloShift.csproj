@@ -8,7 +8,7 @@
     <RootNamespace>HaloShift</RootNamespace>
     <AssemblyName>HaloShift</AssemblyName>
     <!-- Single source of truth for app version -->
-    <VersionPrefix>1.5.0.0</VersionPrefix>
+    <VersionPrefix>1.5.1.0</VersionPrefix>
     <Version>$(VersionPrefix)</Version>
     <AssemblyVersion>$(VersionPrefix)</AssemblyVersion>
     <FileVersion>$(VersionPrefix)</FileVersion>
