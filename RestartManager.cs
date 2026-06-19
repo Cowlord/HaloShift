@@ -17,7 +17,9 @@ namespace HaloShift
         private const int MAX_RESTART_ATTEMPTS = 5;
         private const string RESTART_LOG_NAME = "restart.log";
 
-        private static readonly string RestartLogPath = Path.Combine(AppContext.BaseDirectory, RESTART_LOG_NAME);
+        private static readonly string DataDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "HaloShift");
+        private static readonly string RestartLogPath = Path.Combine(DataDirectory, RESTART_LOG_NAME);
         private static readonly string CurrentExecutablePath = Process.GetCurrentProcess().MainModule?.FileName ?? 
             Path.Combine(AppContext.BaseDirectory, "HaloShift.exe");
 
@@ -186,7 +188,7 @@ namespace HaloShift
         {
             try
             {
-                var lockFilePath = Path.Combine(AppContext.BaseDirectory, "haloshift.lock");
+                var lockFilePath = Path.Combine(DataDirectory, "haloshift.lock");
                 if (!File.Exists(lockFilePath))
                     return false; // Clean shutdown removed lock file
 
@@ -246,7 +248,7 @@ namespace HaloShift
         {
             try
             {
-                var countFile = Path.Combine(AppContext.BaseDirectory, ".restart_count");
+                var countFile = Path.Combine(DataDirectory, ".restart_count");
                 if (File.Exists(countFile))
                 {
                     var content = File.ReadAllText(countFile);
@@ -269,7 +271,8 @@ namespace HaloShift
         {
             try
             {
-                var countFile = Path.Combine(AppContext.BaseDirectory, ".restart_count");
+                Directory.CreateDirectory(DataDirectory);
+                var countFile = Path.Combine(DataDirectory, ".restart_count");
                 var count = GetRestartCount() + 1;
                 File.WriteAllText(countFile, count.ToString());
             }
@@ -283,7 +286,7 @@ namespace HaloShift
         {
             try
             {
-                var countFile = Path.Combine(AppContext.BaseDirectory, ".restart_count");
+                var countFile = Path.Combine(DataDirectory, ".restart_count");
                 if (File.Exists(countFile))
                 {
                     File.Delete(countFile);
@@ -299,6 +302,7 @@ namespace HaloShift
         {
             try
             {
+                Directory.CreateDirectory(DataDirectory);
                 var logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}{Environment.NewLine}";
                 File.AppendAllText(RestartLogPath, logEntry);
 
