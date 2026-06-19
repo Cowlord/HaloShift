@@ -21,8 +21,9 @@ namespace HaloShift
                 using var key = Registry.CurrentUser.OpenSubKey(RunKey, false);
                 return key?.GetValue(AppName) != null;
             }
-            catch
+            catch (Exception ex)
             {
+                Debug.WriteLine($"Failed to check startup status: {ex.Message}");
                 return false;
             }
         }
@@ -42,7 +43,10 @@ namespace HaloShift
                 using var key = Registry.CurrentUser.OpenSubKey(RunKey, true);
                 key?.SetValue(AppName, $"\"{ExePath}\"");
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to add startup entry: {ex.Message}");
+            }
         }
 
         public static void RemoveAllEntries()
@@ -52,7 +56,10 @@ namespace HaloShift
                 using var key = Registry.CurrentUser.OpenSubKey(RunKey, true);
                 key?.DeleteValue(AppName, throwOnMissingValue: false);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to remove startup entries: {ex.Message}");
+            }
         }
     }
 }

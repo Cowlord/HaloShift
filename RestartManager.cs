@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -196,9 +195,10 @@ namespace HaloShift
                 // If lock file hasn't been updated recently, it's a crash
                 return timeSinceLock.TotalSeconds > 15;
             }
-            catch
+            catch (Exception ex)
             {
-                return true; // Assume crash if we can't check
+                LogRestartMessage($"Failed to check crash exit status: {ex.Message}");
+                return true;
             }
         }
 
@@ -257,7 +257,10 @@ namespace HaloShift
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to read restart count: {ex.Message}");
+            }
 
             return 0;
         }
@@ -273,7 +276,10 @@ namespace HaloShift
                 var count = GetRestartCount() + 1;
                 File.WriteAllText(countFile, count.ToString());
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to increment restart count: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -289,7 +295,10 @@ namespace HaloShift
                     File.Delete(countFile);
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to reset restart count: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -311,9 +320,9 @@ namespace HaloShift
                     File.WriteAllLines(RestartLogPath, lines[halfLines..]);
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Silently fail if we can't write to log
+                Debug.WriteLine($"Failed to write restart log: {ex.Message}");
             }
         }
 
@@ -333,8 +342,9 @@ namespace HaloShift
 
                 return lines[^count..];
             }
-            catch
+            catch (Exception ex)
             {
+                Debug.WriteLine($"Failed to read restart log: {ex.Message}");
                 return Array.Empty<string>();
             }
         }

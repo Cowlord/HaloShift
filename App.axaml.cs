@@ -4,6 +4,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
 using System;
+using System.Diagnostics;
 
 namespace HaloShift
 {
@@ -128,6 +129,10 @@ namespace HaloShift
 
                 if (_modeManager.CurrentMode == AppMode.Mouse && isConnected)
                     _modeManager.HandleMouseModeInput(currentState);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Controller poll error: {ex.Message}");
             }
             finally
             {
