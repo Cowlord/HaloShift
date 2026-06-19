@@ -244,10 +244,20 @@ Process ID: {Process.GetCurrentProcess().Id}
                     File.WriteAllLines(CrashLogPath, lines[halfLines..]);
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Silently fail if we can't write to log
+                Debug.WriteLine($"Failed to write crash log: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Log an unhandled exception from global handlers in Program.cs
+        /// </summary>
+        public static void LogUnhandledException(string source, Exception ex)
+        {
+            var message = $"UNHANDLED EXCEPTION [{source}]: {ex}";
+            LogMessage(message);
+            Debug.WriteLine(message);
         }
 
         /// <summary>
@@ -276,8 +286,9 @@ Process ID: {Process.GetCurrentProcess().Id}
 
                 return lines[^count..];
             }
-            catch
+            catch (Exception ex)
             {
+                Debug.WriteLine($"Failed to read crash log: {ex.Message}");
                 return Array.Empty<string>();
             }
         }

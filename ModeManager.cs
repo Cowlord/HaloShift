@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using SharpDX.XInput;
 
@@ -282,9 +283,9 @@ namespace HaloShift
                         InputSimulator.SendKey(0x12, false); // Alt up
                         System.Threading.Thread.Sleep(10);
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        // Ignore; combo is best-effort
+                        Debug.WriteLine($"Alt+F4 combo failed: {ex.Message}");
                     }
                 });
             }
@@ -307,9 +308,9 @@ namespace HaloShift
                         InputSimulator.SendKey(0x11, false); // Ctrl up
                         System.Threading.Thread.Sleep(10);
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        // Ignore; combo is best-effort
+                        Debug.WriteLine($"Ctrl+W combo failed: {ex.Message}");
                     }
                 });
             }

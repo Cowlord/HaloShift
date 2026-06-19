@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 
@@ -23,8 +24,9 @@ namespace HaloShift
                     return JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Debug.WriteLine($"Failed to load settings: {ex.Message}");
             }
 
             return new AppSettings();
@@ -40,8 +42,9 @@ namespace HaloShift
                 var options = new JsonSerializerOptions { WriteIndented = true };
                 File.WriteAllText(path, JsonSerializer.Serialize(this, options));
             }
-            catch
+            catch (Exception ex)
             {
+                Debug.WriteLine($"Failed to save settings: {ex.Message}");
             }
         }
     }

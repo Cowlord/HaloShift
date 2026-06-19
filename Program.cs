@@ -1,7 +1,9 @@
 using Avalonia;
 using Avalonia.Controls;
 using System;
+using System.Diagnostics;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace HaloShift
 {
@@ -12,6 +14,18 @@ namespace HaloShift
         [STAThread]
         public static void Main(string[] args)
         {
+            AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
+            {
+                if (e.ExceptionObject is Exception ex)
+                    CrashHandler.LogUnhandledException("AppDomain", ex);
+            };
+
+            TaskScheduler.UnobservedTaskException += (sender, e) =>
+            {
+                CrashHandler.LogUnhandledException("UnobservedTask", e.Exception);
+                e.SetObserved();
+            };
+
             // Check if we're running in watcher mode
             if (args.Length > 0 && args[0] == "--watcher")
             {
@@ -30,7 +44,15 @@ namespace HaloShift
             if (!createdNew)
                 return;
 
-            BuildAvaloniaApp().StartWithClassicDesktopLifetime(args, ShutdownMode.OnExplicitShutdown);
+            try
+            {
+                BuildAvaloniaApp().StartWithClassicDesktopLifetime(args, ShutdownMode.OnExplicitShutdown);
+            }
+            catch (Exception ex)
+            {
+                CrashHandler.LogUnhandledException("Main", ex);
+                throw;
+            }
         }
 
         public static AppBuilder BuildAvaloniaApp()
