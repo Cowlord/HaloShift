@@ -24,23 +24,27 @@ namespace HaloShift
                 return;
 
             var cts = new CancellationTokenSource();
+            CancellationTokenSource? oldCts;
 
             lock (_lock)
             {
-                _playbackCts?.Cancel();
+                oldCts = _playbackCts;
                 _playbackCts = cts;
             }
 
-            _ = Task.Run(() => PlayWavCore(path, cts));
+            try { oldCts?.Cancel(); }
+            catch { }
+            oldCts?.Dispose();
+
+            _ = Task.Run(() => PlayWavCore(path, cts.Token));
         }
 
-        private static void PlayWavCore(string path, CancellationTokenSource cts)
+        private static void PlayWavCore(string path, CancellationToken token)
         {
             WasapiOut? output = null;
             AudioFileReader? reader = null;
             try
             {
-                var token = cts.Token;
                 reader = new AudioFileReader(path);
                 output = new WasapiOut(AudioClientShareMode.Shared, 100);
                 output.Init(reader);
@@ -64,7 +68,6 @@ namespace HaloShift
             {
                 output?.Dispose();
                 reader?.Dispose();
-                cts.Dispose();
             }
         }
     }

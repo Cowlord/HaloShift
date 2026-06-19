@@ -4,7 +4,6 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
 using System;
-using System.Diagnostics;
 
 namespace HaloShift
 {
@@ -28,11 +27,6 @@ namespace HaloShift
 
         public override void OnFrameworkInitializationCompleted()
         {
-            // Initialize crash detection and restart management first
-            CrashHandler.Initialize();
-            RestartManager.StartWatcher();
-            RestartManager.ResetRestartCount();
-
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
                 _desktopLifetime = desktop;
@@ -130,9 +124,8 @@ namespace HaloShift
                 if (_modeManager.CurrentMode == AppMode.Mouse && isConnected)
                     _modeManager.HandleMouseModeInput(currentState);
             }
-            catch (Exception ex)
+            catch
             {
-                Debug.WriteLine($"Controller poll error: {ex.Message}");
             }
             finally
             {
@@ -197,8 +190,6 @@ namespace HaloShift
             _sensitivityOverlay?.HideOverlay();
             _mainWindow?.Close();
 
-            // Clean shutdown - remove crash detection
-            CrashHandler.Shutdown();
         }
     }
 }

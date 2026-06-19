@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using SharpDX.XInput;
 
@@ -261,8 +260,7 @@ namespace HaloShift
             // X → Esc (only if not part of middle click combo)
             if (x && !ltPressed && !rtPressed && !_xButtonWasPressed)
             {
-                // VK_ESCAPE = 0x1B
-                InputSimulator.PressKey(0x1B);
+                InputSimulator.PressKey(VirtualKey.Escape);
             }
             _xButtonWasPressed = x && !ltPressed && !rtPressed;
 
@@ -272,21 +270,8 @@ namespace HaloShift
             {
                 _ = Task.Run(() =>
                 {
-                    try
-                    {
-                        InputSimulator.SendKey(0x12, true);  // Alt down
-                        System.Threading.Thread.Sleep(10);
-                        InputSimulator.SendKey(0x73, true);  // F4 down
-                        System.Threading.Thread.Sleep(50);
-                        InputSimulator.SendKey(0x73, false); // F4 up
-                        System.Threading.Thread.Sleep(10);
-                        InputSimulator.SendKey(0x12, false); // Alt up
-                        System.Threading.Thread.Sleep(10);
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"Alt+F4 combo failed: {ex.Message}");
-                    }
+                    try { InputSimulator.SendKeyCombo(VirtualKey.F4, VirtualKey.Alt); }
+                    catch { }
                 });
             }
             _altF4ComboWasPressed = altF4Combo;
@@ -297,21 +282,8 @@ namespace HaloShift
             {
                 _ = Task.Run(() =>
                 {
-                    try
-                    {
-                        InputSimulator.SendKey(0x11, true);  // Ctrl down
-                        System.Threading.Thread.Sleep(10);
-                        InputSimulator.SendKey(0x57, true);  // W down
-                        System.Threading.Thread.Sleep(50);
-                        InputSimulator.SendKey(0x57, false); // W up
-                        System.Threading.Thread.Sleep(10);
-                        InputSimulator.SendKey(0x11, false); // Ctrl up
-                        System.Threading.Thread.Sleep(10);
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"Ctrl+W combo failed: {ex.Message}");
-                    }
+                    try { InputSimulator.SendKeyCombo(VirtualKey.W, VirtualKey.Ctrl); }
+                    catch { }
                 });
             }
             _ctrlWComboWasPressed = ctrlWCombo;
@@ -322,23 +294,21 @@ namespace HaloShift
                 if (ControlsWindow.IsOpen)
                     ControlsWindow.CloseIfOpen();
                 else
-                    InputSimulator.PressKey(0xA6); // VK_BROWSER_BACK
+                    InputSimulator.PressKey(VirtualKey.BrowserBack);
             }
             _bButtonWasPressed = b;
 
             // Right Stick Click → F5
             if (rightStickClick && !_rightStickWasPressed)
             {
-                // VK_F5 = 0x74
-                InputSimulator.PressKey(0x74);
+                InputSimulator.PressKey(VirtualKey.F5);
             }
             _rightStickWasPressed = rightStickClick;
 
             // Left Stick Click → Windows key
             if (leftStickClick && !_leftStickWasPressed)
             {
-                // VK_LWIN = 0x5B
-                InputSimulator.PressKey(0x5B);
+                InputSimulator.PressKey(VirtualKey.LWin);
             }
             _leftStickWasPressed = leftStickClick;
 
@@ -348,8 +318,7 @@ namespace HaloShift
             // Only trigger F11 on the transition from unpressed to pressed
             if (lbAlone && !_f11ButtonWasPressed)
             {
-                // VK_F11 = 0x7A
-                InputSimulator.PressKey(0x7A);
+                InputSimulator.PressKey(VirtualKey.F11);
             }
 
             _f11ButtonWasPressed = lbAlone;

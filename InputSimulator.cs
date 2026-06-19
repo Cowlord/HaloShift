@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace HaloShift
@@ -10,19 +9,6 @@ namespace HaloShift
 
         [DllImport("user32.dll", SetLastError = true)]
         private static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
-
-        [DllImport("user32.dll")]
-        private static extern void SetCursorPos(int x, int y);
-
-        [DllImport("user32.dll")]
-        private static extern void GetCursorPos(out POINT lpPoint);
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct POINT
-        {
-            public int X;
-            public int Y;
-        }
 
         [StructLayout(LayoutKind.Sequential)]
         private struct INPUT
@@ -82,12 +68,7 @@ namespace HaloShift
             if (inputs == null || inputs.Length == 0)
                 return;
 
-            uint sent = SendInput((uint)inputs.Length, inputs, InputSize);
-            if (sent != (uint)inputs.Length)
-            {
-                int err = Marshal.GetLastWin32Error();
-                Debug.WriteLine($"SendInput sent {sent} of {inputs.Length} inputs; Win32 error {err}.");
-            }
+            SendInput((uint)inputs.Length, inputs, InputSize);
         }
 
         public static void MoveMouse(int deltaX, int deltaY)
@@ -110,45 +91,6 @@ namespace HaloShift
             };
 
             DispatchInputs(new[] { input });
-        }
-
-        public static void LeftClick()
-        {
-            var downInput = new INPUT
-            {
-                Type = INPUT_MOUSE,
-                U = new InputUnion
-                {
-                    mi = new MOUSEINPUT
-                    {
-                        dx = 0,
-                        dy = 0,
-                        mouseData = 0,
-                        dwFlags = MOUSEEVENTF_LEFTDOWN,
-                        time = 0,
-                        dwExtraInfo = IntPtr.Zero
-                    }
-                }
-            };
-
-            var upInput = new INPUT
-            {
-                Type = INPUT_MOUSE,
-                U = new InputUnion
-                {
-                    mi = new MOUSEINPUT
-                    {
-                        dx = 0,
-                        dy = 0,
-                        mouseData = 0,
-                        dwFlags = MOUSEEVENTF_LEFTUP,
-                        time = 0,
-                        dwExtraInfo = IntPtr.Zero
-                    }
-                }
-            };
-
-            DispatchInputs(new[] { downInput, upInput });
         }
 
         public static void LeftMouseButtonDown()
@@ -191,45 +133,6 @@ namespace HaloShift
                 }
             };
             DispatchInputs(new[] { input });
-        }
-
-        public static void RightClick()
-        {
-            var downInput = new INPUT
-            {
-                Type = INPUT_MOUSE,
-                U = new InputUnion
-                {
-                    mi = new MOUSEINPUT
-                    {
-                        dx = 0,
-                        dy = 0,
-                        mouseData = 0,
-                        dwFlags = MOUSEEVENTF_RIGHTDOWN,
-                        time = 0,
-                        dwExtraInfo = IntPtr.Zero
-                    }
-                }
-            };
-
-            var upInput = new INPUT
-            {
-                Type = INPUT_MOUSE,
-                U = new InputUnion
-                {
-                    mi = new MOUSEINPUT
-                    {
-                        dx = 0,
-                        dy = 0,
-                        mouseData = 0,
-                        dwFlags = MOUSEEVENTF_RIGHTUP,
-                        time = 0,
-                        dwExtraInfo = IntPtr.Zero
-                    }
-                }
-            };
-
-            DispatchInputs(new[] { downInput, upInput });
         }
 
         public static void RightMouseButtonDown()
@@ -370,11 +273,23 @@ namespace HaloShift
             SendKey(keyCode, false);
         }
 
-        public static void GetMousePosition(out int x, out int y)
+        /// <summary>
+        /// Sends a key combination (modifier(s) + key) with proper timing.
+        /// </summary>
+        public static void SendKeyCombo(byte key, params byte[] modifiers)
         {
-            GetCursorPos(out POINT point);
-            x = point.X;
-            y = point.Y;
+            foreach (var mod in modifiers)
+                SendKey(mod, true);
+            System.Threading.Thread.Sleep(10);
+
+            SendKey(key, true);
+            System.Threading.Thread.Sleep(50);
+            SendKey(key, false);
+
+            System.Threading.Thread.Sleep(10);
+            for (int i = modifiers.Length - 1; i >= 0; i--)
+                SendKey(modifiers[i], false);
         }
+
     }
 }

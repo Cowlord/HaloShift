@@ -7,12 +7,9 @@ namespace HaloShift
     {
         private readonly Controller[] _controllers = new Controller[4];
         private int _activeIndex;
-        private Gamepad _previousState;
         private Gamepad _currentState;
         private bool _isConnected;
         private bool _disposed = false;
-
-        public event EventHandler<GamepadStateChangedEventArgs>? StateChanged;
 
         public ControllerManager()
         {
@@ -20,7 +17,6 @@ namespace HaloShift
                 _controllers[i] = new Controller((UserIndex)i);
 
             SelectFirstConnectedSlot();
-            _previousState = new Gamepad();
             _currentState = new Gamepad();
             _isConnected = Active.IsConnected;
         }
@@ -49,26 +45,11 @@ namespace HaloShift
             {
                 _isConnected = false;
                 _currentState = new Gamepad();
-                _previousState = new Gamepad();
                 return;
             }
 
             _isConnected = true;
-            var state = Active.GetState().Gamepad;
-            _currentState = state;
-
-            // Check if state changed
-            if (state.Buttons != _previousState.Buttons ||
-                state.LeftTrigger != _previousState.LeftTrigger ||
-                state.RightTrigger != _previousState.RightTrigger ||
-                state.LeftThumbX != _previousState.LeftThumbX ||
-                state.LeftThumbY != _previousState.LeftThumbY ||
-                state.RightThumbX != _previousState.RightThumbX ||
-                state.RightThumbY != _previousState.RightThumbY)
-            {
-                StateChanged?.Invoke(this, new GamepadStateChangedEventArgs(state));
-                _previousState = state;
-            }
+            _currentState = Active.GetState().Gamepad;
         }
 
         public Gamepad GetCurrentState()
@@ -88,13 +69,4 @@ namespace HaloShift
         }
     }
 
-    public class GamepadStateChangedEventArgs : EventArgs
-    {
-        public Gamepad State { get; set; }
-
-        public GamepadStateChangedEventArgs(Gamepad state)
-        {
-            State = state;
-        }
-    }
 }
