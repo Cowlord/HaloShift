@@ -17,6 +17,7 @@ namespace HaloShift
         private const string RESTART_LOG_NAME = "restart.log";
 
         private static readonly string RestartLogPath = Path.Combine(AppContext.BaseDirectory, RESTART_LOG_NAME);
+        private static readonly FileLogger _logger = new(RestartLogPath, 512 * 1024);
         private static readonly string CurrentExecutablePath = Process.GetCurrentProcess().MainModule?.FileName ?? 
             Path.Combine(AppContext.BaseDirectory, "HaloShift.exe");
 
@@ -51,11 +52,11 @@ namespace HaloShift
                     };
 
                     Process.Start(startInfo);
-                    LogRestartMessage("Watcher process started");
+                    _logger.Log("Watcher process started");
                 }
                 catch (Exception ex)
                 {
-                    LogRestartMessage($"Failed to start watcher: {ex.Message}");
+                    _logger.Log($"Failed to start watcher: {ex.Message}");
                 }
             });
         }
@@ -77,11 +78,11 @@ namespace HaloShift
                 };
 
                 Process.Start(startInfo);
-                LogRestartMessage("Self-watcher process started");
+                _logger.Log("Self-watcher process started");
             }
             catch (Exception ex)
             {
-                LogRestartMessage($"Failed to start self-watcher: {ex.Message}");
+                _logger.Log($"Failed to start self-watcher: {ex.Message}");
             }
         }
 
@@ -93,32 +94,32 @@ namespace HaloShift
             try
             {
                 var parentProcess = Process.GetProcessById(parentProcessId);
-                LogRestartMessage($"Watching process {parentProcessId} ({parentProcess.ProcessName})");
+                _logger.Log($"Watching process {parentProcessId} ({parentProcess.ProcessName})");
 
                 // Wait for parent process to exit
                 parentProcess.WaitForExit();
 
-                LogRestartMessage($"Parent process {parentProcessId} exited, checking for crash...");
+                _logger.Log($"Parent process {parentProcessId} exited, checking for crash...");
 
                 // Check if it was a crash (unclean exit)
                 if (WasCrashExit())
                 {
-                    LogRestartMessage("Crash detected, attempting restart...");
+                    _logger.Log("Crash detected, attempting restart...");
                     RestartApplication();
                 }
                 else
                 {
-                    LogRestartMessage("Clean exit detected, not restarting");
+                    _logger.Log("Clean exit detected, not restarting");
                 }
             }
             catch (ArgumentException)
             {
-                LogRestartMessage($"Parent process {parentProcessId} not found, assuming crash...");
+                _logger.Log($"Parent process {parentProcessId} not found, assuming crash...");
                 RestartApplication();
             }
             catch (Exception ex)
             {
-                LogRestartMessage($"Watcher error: {ex.Message}");
+                _logger.Log($"Watcher error: {ex.Message}");
                 RestartApplication();
             }
         }
@@ -128,7 +129,7 @@ namespace HaloShift
         /// </summary>
         public static void RunSelfWatcher()
         {
-            LogRestartMessage("Self-watcher mode activated");
+            _logger.Log("Self-watcher mode activated");
 
             // Find the main HaloShift process (not the watcher)
             Process? mainProcess = null;
@@ -145,31 +146,31 @@ namespace HaloShift
 
             if (mainProcess == null)
             {
-                LogRestartMessage("No main process found to watch, exiting");
+                _logger.Log("No main process found to watch, exiting");
                 return;
             }
 
             try
             {
-                LogRestartMessage($"Watching main process {mainProcess.Id}");
+                _logger.Log($"Watching main process {mainProcess.Id}");
                 mainProcess.WaitForExit();
 
-                LogRestartMessage("Main process exited, checking for crash...");
+                _logger.Log("Main process exited, checking for crash...");
                 Thread.Sleep(2000); // Brief delay to ensure lock file is updated
 
                 if (WasCrashExit())
                 {
-                    LogRestartMessage("Crash detected, attempting restart...");
+                    _logger.Log("Crash detected, attempting restart...");
                     RestartApplication();
                 }
                 else
                 {
-                    LogRestartMessage("Clean exit detected, not restarting");
+                    _logger.Log("Clean exit detected, not restarting");
                 }
             }
             catch (Exception ex)
             {
-                LogRestartMessage($"Self-watcher error: {ex.Message}");
+                _logger.Log($"Self-watcher error: {ex.Message}");
                 RestartApplication();
             }
             finally
@@ -197,7 +198,7 @@ namespace HaloShift
             }
             catch (Exception ex)
             {
-                LogRestartMessage($"Failed to check crash exit status: {ex.Message}");
+                _logger.Log($"Failed to check crash exit status: {ex.Message}");
                 return true;
             }
         }
@@ -211,12 +212,12 @@ namespace HaloShift
 
             if (restartCount >= MAX_RESTART_ATTEMPTS)
             {
-                LogRestartMessage($"Maximum restart attempts ({MAX_RESTART_ATTEMPTS}) reached, giving up");
+                _logger.Log($"Maximum restart attempts ({MAX_RESTART_ATTEMPTS}) reached, giving up");
                 return;
             }
 
             IncrementRestartCount();
-            LogRestartMessage($"Restart attempt {restartCount + 1}/{MAX_RESTART_ATTEMPTS}");
+            _logger.Log($"Restart attempt {restartCount + 1}/{MAX_RESTART_ATTEMPTS}");
 
             try
             {
@@ -231,11 +232,11 @@ namespace HaloShift
                 };
 
                 Process.Start(startInfo);
-                LogRestartMessage($"Restarted successfully: {CurrentExecutablePath}");
+                _logger.Log($"Restarted successfully: {CurrentExecutablePath}");
             }
             catch (Exception ex)
             {
-                LogRestartMessage($"Restart failed: {ex.Message}");
+                _logger.Log($"Restart failed: {ex.Message}");
             }
         }
 
@@ -301,52 +302,7 @@ namespace HaloShift
             }
         }
 
-        /// <summary>
-        /// Log restart-related messages
-        /// </summary>
-        private static void LogRestartMessage(string message)
-        {
-            try
-            {
-                var logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}{Environment.NewLine}";
-                File.AppendAllText(RestartLogPath, logEntry);
-
-                // Keep log file under 500KB
-                var fileInfo = new FileInfo(RestartLogPath);
-                if (fileInfo.Length > 512 * 1024)
-                {
-                    var lines = File.ReadAllLines(RestartLogPath);
-                    var halfLines = lines.Length / 2;
-                    File.WriteAllLines(RestartLogPath, lines[halfLines..]);
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Failed to write restart log: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Get recent restart log entries
-        /// </summary>
-        public static string[] GetRecentLogEntries(int count = 20)
-        {
-            try
-            {
-                if (!File.Exists(RestartLogPath))
-                    return Array.Empty<string>();
-
-                var lines = File.ReadAllLines(RestartLogPath);
-                if (lines.Length <= count)
-                    return lines;
-
-                return lines[^count..];
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Failed to read restart log: {ex.Message}");
-                return Array.Empty<string>();
-            }
-        }
+        public static string[] GetRecentLogEntries(int count = 20) =>
+            _logger.GetRecentEntries(count);
     }
 }

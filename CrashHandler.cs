@@ -16,6 +16,7 @@ namespace HaloShift
         private const string CRASH_LOG_NAME = "crash.log";
         private static readonly string LockFilePath = Path.Combine(AppContext.BaseDirectory, LOCK_FILE_NAME);
         private static readonly string CrashLogPath = Path.Combine(AppContext.BaseDirectory, CRASH_LOG_NAME);
+        private static readonly FileLogger _logger = new(CrashLogPath);
         private static Timer? _heartbeatTimer;
         private static readonly object _lockObject = new object();
         private static bool _isShuttingDown = false;
@@ -54,8 +55,7 @@ namespace HaloShift
             // Start heartbeat timer (updates every 5 seconds)
             _heartbeatTimer = new Timer(UpdateHeartbeat, null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
 
-            // Log successful startup
-            LogMessage($"HaloShift started successfully at {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+            _logger.Log($"HaloShift started successfully at {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
         }
 
         /// <summary>
@@ -69,7 +69,7 @@ namespace HaloShift
                 _isShuttingDown = true;
             }
 
-            LogMessage($"HaloShift shutting down gracefully at {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+            _logger.Log($"HaloShift shutting down gracefully at {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
             
             _heartbeatTimer?.Dispose();
             RemoveLockFile();
@@ -90,18 +90,14 @@ namespace HaloShift
                     // If lock file is older than 30 seconds, assume crash
                     if (timeSinceLock.TotalSeconds > 30)
                     {
-                        LogMessage($"CRASH DETECTED: Previous instance crashed {timeSinceLock.TotalMinutes:F1} minutes ago");
-                        
-                        // Attempt to clean up any orphaned processes
+                        _logger.Log($"CRASH DETECTED: Previous instance crashed {timeSinceLock.TotalMinutes:F1} minutes ago");
                         CleanupOrphanedProcesses();
-                        
-                        // Log crash details
                         LogCrashDetails(lockTime);
                     }
                 }
                 catch (Exception ex)
                 {
-                    LogMessage($"Error checking for previous crash: {ex.Message}");
+                    _logger.Log($"Error checking for previous crash: {ex.Message}");
                 }
             }
         }
@@ -117,7 +113,7 @@ namespace HaloShift
             }
             catch (Exception ex)
             {
-                LogMessage($"Failed to create lock file: {ex.Message}");
+                _logger.Log($"Failed to create lock file: {ex.Message}");
             }
         }
 
@@ -135,7 +131,7 @@ namespace HaloShift
             }
             catch (Exception ex)
             {
-                LogMessage($"Failed to remove lock file: {ex.Message}");
+                _logger.Log($"Failed to remove lock file: {ex.Message}");
             }
         }
 
@@ -155,7 +151,7 @@ namespace HaloShift
             }
             catch (Exception ex)
             {
-                LogMessage($"Heartbeat update failed: {ex.Message}");
+                _logger.Log($"Heartbeat update failed: {ex.Message}");
             }
         }
 
@@ -178,14 +174,14 @@ namespace HaloShift
                             // Check if process has been running without heartbeat updates
                             if (process.StartTime < DateTime.Now.AddMinutes(-5))
                             {
-                                LogMessage($"Terminating orphaned process {process.Id} (started {process.StartTime})");
+                                _logger.Log($"Terminating orphaned process {process.Id} (started {process.StartTime})");
                                 process.Kill();
                                 process.WaitForExit(5000);
                             }
                         }
                         catch (Exception ex)
                         {
-                            LogMessage($"Failed to terminate process {process.Id}: {ex.Message}");
+                            _logger.Log($"Failed to terminate process {process.Id}: {ex.Message}");
                         }
                         finally
                         {
@@ -196,7 +192,7 @@ namespace HaloShift
             }
             catch (Exception ex)
             {
-                LogMessage($"Error during cleanup: {ex.Message}");
+                _logger.Log($"Error during cleanup: {ex.Message}");
             }
         }
 
@@ -217,36 +213,11 @@ Working Directory: {Environment.CurrentDirectory}
 Process ID: {Process.GetCurrentProcess().Id}
 ===================";
 
-                LogMessage(crashInfo);
+                _logger.Log(crashInfo);
             }
             catch (Exception ex)
             {
-                LogMessage($"Failed to log crash details: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Write message to crash log
-        /// </summary>
-        private static void LogMessage(string message)
-        {
-            try
-            {
-                var logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}{Environment.NewLine}";
-                File.AppendAllText(CrashLogPath, logEntry);
-
-                // Keep log file under 1MB
-                var fileInfo = new FileInfo(CrashLogPath);
-                if (fileInfo.Length > 1024 * 1024)
-                {
-                    var lines = File.ReadAllLines(CrashLogPath);
-                    var halfLines = lines.Length / 2;
-                    File.WriteAllLines(CrashLogPath, lines[halfLines..]);
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Failed to write crash log: {ex.Message}");
+                _logger.Log($"Failed to log crash details: {ex.Message}");
             }
         }
 
@@ -256,7 +227,7 @@ Process ID: {Process.GetCurrentProcess().Id}
         public static void LogUnhandledException(string source, Exception ex)
         {
             var message = $"UNHANDLED EXCEPTION [{source}]: {ex}";
-            LogMessage(message);
+            _logger.Log(message);
             Debug.WriteLine(message);
         }
 
@@ -265,7 +236,7 @@ Process ID: {Process.GetCurrentProcess().Id}
         /// </summary>
         private static bool Handler(CtrlTypes sig)
         {
-            LogMessage($"Received shutdown signal: {sig}");
+            _logger.Log($"Received shutdown signal: {sig}");
             Shutdown();
             return false; // Let default handler also run
         }
@@ -273,24 +244,7 @@ Process ID: {Process.GetCurrentProcess().Id}
         /// <summary>
         /// Get recent crash log entries for diagnostics
         /// </summary>
-        public static string[] GetRecentLogEntries(int count = 50)
-        {
-            try
-            {
-                if (!File.Exists(CrashLogPath))
-                    return Array.Empty<string>();
-
-                var lines = File.ReadAllLines(CrashLogPath);
-                if (lines.Length <= count)
-                    return lines;
-
-                return lines[^count..];
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Failed to read crash log: {ex.Message}");
-                return Array.Empty<string>();
-            }
-        }
+        public static string[] GetRecentLogEntries(int count = 50) =>
+            _logger.GetRecentEntries(count);
     }
 }

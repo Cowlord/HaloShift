@@ -1,6 +1,4 @@
 using System;
-using System.Diagnostics;
-using System.Threading.Tasks;
 using SharpDX.XInput;
 
 namespace HaloShift
@@ -66,7 +64,7 @@ namespace HaloShift
 
         public void Update(Gamepad gamepad)
         {
-            bool view = (gamepad.Buttons & GamepadButtonFlags.Back) != 0;
+            bool view = gamepad.IsPressed(GamepadButtonFlags.Back);
 
             if (view)
             {
@@ -86,7 +84,7 @@ namespace HaloShift
                 _toggleFiredThisHold = false;
             }
 
-            bool y = (gamepad.Buttons & GamepadButtonFlags.Y) != 0;
+            bool y = gamepad.IsPressed(GamepadButtonFlags.Y);
             if (y && !_yButtonWasPressed && _currentMode == AppMode.Mouse)
             {
                 ShowKeyboardRequested?.Invoke(this, EventArgs.Empty);
@@ -165,6 +163,20 @@ namespace HaloShift
             }
         }
 
+        private (bool LtPressed, bool RtPressed) ParseTriggers(Gamepad gamepad)
+        {
+            float lt = gamepad.LeftTrigger / 255f;
+            float rt = gamepad.RightTrigger / 255f;
+            return (lt > TRIGGER_THRESHOLD, rt > TRIGGER_THRESHOLD);
+        }
+
+        private static float NormalizeStick(short rawValue, float deadzone)
+        {
+            const float MAX_STICK_VALUE = 32767f;
+            float normalized = rawValue / MAX_STICK_VALUE;
+            return Math.Abs(normalized) < deadzone ? 0f : normalized;
+        }
+
         /// <summary>
         /// Sticks, scroll, and LT/RT mouse buttons only — safe to run while the virtual keyboard is open
         /// (it owns face buttons, bumpers for typing, and D-pad navigation).
@@ -174,10 +186,7 @@ namespace HaloShift
             HandleLeftStickMovement(gamepad);
             HandleRightStickScroll(gamepad);
 
-            float ltTrigger = gamepad.LeftTrigger / 255f;
-            float rtTrigger = gamepad.RightTrigger / 255f;
-            bool ltPressed = ltTrigger > TRIGGER_THRESHOLD;
-            bool rtPressed = rtTrigger > TRIGGER_THRESHOLD;
+            var (ltPressed, rtPressed) = ParseTriggers(gamepad);
 
             bool wantLeftMouseDown = rtPressed && !ltPressed;
             bool wantRightMouseDown = ltPressed && !rtPressed;
@@ -199,22 +208,17 @@ namespace HaloShift
         {
             HandleMouseModePointerInput(gamepad);
 
-            // Trigger states for combos below (same thresholds as pointer mapping)
-            float ltTrigger = gamepad.LeftTrigger / 255f;
-            float rtTrigger = gamepad.RightTrigger / 255f;
-            bool ltPressed = ltTrigger > TRIGGER_THRESHOLD;
-            bool rtPressed = rtTrigger > TRIGGER_THRESHOLD;
+            var (ltPressed, rtPressed) = ParseTriggers(gamepad);
 
-            // Get button states
-            bool rb = (gamepad.Buttons & GamepadButtonFlags.RightShoulder) != 0;
-            bool y = (gamepad.Buttons & GamepadButtonFlags.Y) != 0;
-            bool lb = (gamepad.Buttons & GamepadButtonFlags.LeftShoulder) != 0;
-            bool x = (gamepad.Buttons & GamepadButtonFlags.X) != 0;
-            bool b = (gamepad.Buttons & GamepadButtonFlags.B) != 0;
-            bool a = (gamepad.Buttons & GamepadButtonFlags.A) != 0;
-            bool rightStickClick = (gamepad.Buttons & GamepadButtonFlags.RightThumb) != 0;
-            bool leftStickClick = (gamepad.Buttons & GamepadButtonFlags.LeftThumb) != 0;
-            bool view = (gamepad.Buttons & GamepadButtonFlags.Back) != 0;
+            bool rb = gamepad.IsPressed(GamepadButtonFlags.RightShoulder);
+            bool y = gamepad.IsPressed(GamepadButtonFlags.Y);
+            bool lb = gamepad.IsPressed(GamepadButtonFlags.LeftShoulder);
+            bool x = gamepad.IsPressed(GamepadButtonFlags.X);
+            bool b = gamepad.IsPressed(GamepadButtonFlags.B);
+            bool a = gamepad.IsPressed(GamepadButtonFlags.A);
+            bool rightStickClick = gamepad.IsPressed(GamepadButtonFlags.RightThumb);
+            bool leftStickClick = gamepad.IsPressed(GamepadButtonFlags.LeftThumb);
+            bool view = gamepad.IsPressed(GamepadButtonFlags.Back);
 
             // LB + View → show controls (About)
             bool lbViewCombo = lb && view && !rb && !y;
@@ -222,9 +226,8 @@ namespace HaloShift
                 ShowControlsRequested?.Invoke(this, EventArgs.Empty);
             _lbViewComboWasPressed = lbViewCombo;
 
-            // Get D-Pad states
-            bool dpadUp = (gamepad.Buttons & GamepadButtonFlags.DPadUp) != 0;
-            bool dpadDown = (gamepad.Buttons & GamepadButtonFlags.DPadDown) != 0;
+            bool dpadUp = gamepad.IsPressed(GamepadButtonFlags.DPadUp);
+            bool dpadDown = gamepad.IsPressed(GamepadButtonFlags.DPadDown);
 
             // D-Pad Up → Increase sensitivity
             if (dpadUp && !_dpadUpWasPressed)
@@ -269,51 +272,13 @@ namespace HaloShift
             // LT + RT + B → Alt+F4
             bool altF4Combo = ltPressed && rtPressed && b;
             if (altF4Combo && !_altF4ComboWasPressed)
-            {
-                _ = Task.Run(() =>
-                {
-                    try
-                    {
-                        InputSimulator.SendKey(0x12, true);  // Alt down
-                        System.Threading.Thread.Sleep(10);
-                        InputSimulator.SendKey(0x73, true);  // F4 down
-                        System.Threading.Thread.Sleep(50);
-                        InputSimulator.SendKey(0x73, false); // F4 up
-                        System.Threading.Thread.Sleep(10);
-                        InputSimulator.SendKey(0x12, false); // Alt up
-                        System.Threading.Thread.Sleep(10);
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"Alt+F4 combo failed: {ex.Message}");
-                    }
-                });
-            }
+                InputSimulator.SendKeyComboAsync(VirtualKey.Alt, VirtualKey.F4);
             _altF4ComboWasPressed = altF4Combo;
 
             // LT + RT + A → Ctrl+W
             bool ctrlWCombo = ltPressed && rtPressed && a;
             if (ctrlWCombo && !_ctrlWComboWasPressed)
-            {
-                _ = Task.Run(() =>
-                {
-                    try
-                    {
-                        InputSimulator.SendKey(0x11, true);  // Ctrl down
-                        System.Threading.Thread.Sleep(10);
-                        InputSimulator.SendKey(0x57, true);  // W down
-                        System.Threading.Thread.Sleep(50);
-                        InputSimulator.SendKey(0x57, false); // W up
-                        System.Threading.Thread.Sleep(10);
-                        InputSimulator.SendKey(0x11, false); // Ctrl up
-                        System.Threading.Thread.Sleep(10);
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"Ctrl+W combo failed: {ex.Message}");
-                    }
-                });
-            }
+                InputSimulator.SendKeyComboAsync(VirtualKey.Ctrl, VirtualKey.W);
             _ctrlWComboWasPressed = ctrlWCombo;
 
             // B → close controls, or Browser Back (only if not part of a combo)
@@ -359,56 +324,35 @@ namespace HaloShift
 
         private void HandleLeftStickMovement(Gamepad gamepad)
         {
-            const float DEADZONE = 0.15f; // Normalized: 0.0 to 1.0
-            const float MAX_STICK_VALUE = 32767f;
+            const float DEADZONE = 0.15f;
 
-            // Normalize stick values from -32768..32767 to -1.0..1.0
-            float stickX = gamepad.LeftThumbX / MAX_STICK_VALUE;
-            float stickY = gamepad.LeftThumbY / MAX_STICK_VALUE;
+            float stickX = NormalizeStick(gamepad.LeftThumbX, DEADZONE);
+            float stickY = NormalizeStick(gamepad.LeftThumbY, DEADZONE);
 
-            // Apply deadzone
-            if (Math.Abs(stickX) < DEADZONE)
-                stickX = 0;
-            if (Math.Abs(stickY) < DEADZONE)
-                stickY = 0;
-
-            // Apply smooth acceleration curve
             stickX = ApplyAccelerationCurve(stickX);
             stickY = ApplyAccelerationCurve(stickY);
 
-            // Scale to pixel movement with sensitivity multiplier
-            const float BASE_SENSITIVITY = 60f; // Pixels per frame (3000 DPI equivalent)
+            const float BASE_SENSITIVITY = 60f;
             float finalSensitivity = BASE_SENSITIVITY * _mouseSensitivity;
             int deltaX = (int)(stickX * finalSensitivity);
-            int deltaY = (int)(-stickY * finalSensitivity); // Invert Y axis
+            int deltaY = (int)(-stickY * finalSensitivity);
 
             if (deltaX != 0 || deltaY != 0)
-            {
                 InputSimulator.MoveMouse(deltaX, deltaY);
-            }
         }
 
         private void HandleRightStickScroll(Gamepad gamepad)
         {
-            const float DEADZONE = 0.15f; // Normalized: 0.0 to 1.0
-            const float MAX_STICK_VALUE = 32767f;
-            const float SCROLL_SPEED = 120f; // Windows standard scroll delta is 120
+            const float DEADZONE = 0.15f;
+            const float SCROLL_SPEED = 120f;
 
-            // Normalize stick Y value from -32768..32767 to -1.0..1.0
-            float stickY = gamepad.RightThumbY / MAX_STICK_VALUE;
-
-            // Apply deadzone
-            if (Math.Abs(stickY) < DEADZONE)
+            float stickY = NormalizeStick(gamepad.RightThumbY, DEADZONE);
+            if (stickY == 0f)
                 return;
 
-            // Apply smooth scrolling with acceleration curve
-            float scrollAmount = ApplyAccelerationCurve(stickY) * SCROLL_SPEED;
-            int scrollDelta = (int)scrollAmount;
-
+            int scrollDelta = (int)(ApplyAccelerationCurve(stickY) * SCROLL_SPEED);
             if (scrollDelta != 0)
-            {
                 InputSimulator.MouseWheel(scrollDelta);
-            }
         }
 
         private float ApplyAccelerationCurve(float stick)

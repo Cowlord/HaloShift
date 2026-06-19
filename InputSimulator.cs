@@ -77,6 +77,9 @@ namespace HaloShift
         private const uint KEYEVENTF_KEYUP = 0x0002;
         private const uint KEYEVENTF_EXTENDEDKEY = 0x0001;
 
+        [DllImport("user32.dll")]
+        public static extern short VkKeyScan(char ch);
+
         private static void DispatchInputs(INPUT[] inputs)
         {
             if (inputs == null || inputs.Length == 0)
@@ -90,249 +93,78 @@ namespace HaloShift
             }
         }
 
-        public static void MoveMouse(int deltaX, int deltaY)
+        private static INPUT CreateMouseInput(uint flags, int dx = 0, int dy = 0, uint mouseData = 0)
         {
-            var input = new INPUT
+            return new INPUT
             {
                 Type = INPUT_MOUSE,
                 U = new InputUnion
                 {
                     mi = new MOUSEINPUT
                     {
-                        dx = deltaX,
-                        dy = deltaY,
-                        mouseData = 0,
-                        dwFlags = MOUSEEVENTF_MOVE,
+                        dx = dx,
+                        dy = dy,
+                        mouseData = mouseData,
+                        dwFlags = flags,
                         time = 0,
                         dwExtraInfo = IntPtr.Zero
                     }
                 }
             };
+        }
 
-            DispatchInputs(new[] { input });
+        public static void MoveMouse(int deltaX, int deltaY)
+        {
+            DispatchInputs(new[] { CreateMouseInput(MOUSEEVENTF_MOVE, deltaX, deltaY) });
         }
 
         public static void LeftClick()
         {
-            var downInput = new INPUT
-            {
-                Type = INPUT_MOUSE,
-                U = new InputUnion
-                {
-                    mi = new MOUSEINPUT
-                    {
-                        dx = 0,
-                        dy = 0,
-                        mouseData = 0,
-                        dwFlags = MOUSEEVENTF_LEFTDOWN,
-                        time = 0,
-                        dwExtraInfo = IntPtr.Zero
-                    }
-                }
-            };
-
-            var upInput = new INPUT
-            {
-                Type = INPUT_MOUSE,
-                U = new InputUnion
-                {
-                    mi = new MOUSEINPUT
-                    {
-                        dx = 0,
-                        dy = 0,
-                        mouseData = 0,
-                        dwFlags = MOUSEEVENTF_LEFTUP,
-                        time = 0,
-                        dwExtraInfo = IntPtr.Zero
-                    }
-                }
-            };
-
-            DispatchInputs(new[] { downInput, upInput });
+            DispatchInputs(new[] {
+                CreateMouseInput(MOUSEEVENTF_LEFTDOWN),
+                CreateMouseInput(MOUSEEVENTF_LEFTUP)
+            });
         }
 
         public static void LeftMouseButtonDown()
         {
-            var input = new INPUT
-            {
-                Type = INPUT_MOUSE,
-                U = new InputUnion
-                {
-                    mi = new MOUSEINPUT
-                    {
-                        dx = 0,
-                        dy = 0,
-                        mouseData = 0,
-                        dwFlags = MOUSEEVENTF_LEFTDOWN,
-                        time = 0,
-                        dwExtraInfo = IntPtr.Zero
-                    }
-                }
-            };
-            DispatchInputs(new[] { input });
+            DispatchInputs(new[] { CreateMouseInput(MOUSEEVENTF_LEFTDOWN) });
         }
 
         public static void LeftMouseButtonUp()
         {
-            var input = new INPUT
-            {
-                Type = INPUT_MOUSE,
-                U = new InputUnion
-                {
-                    mi = new MOUSEINPUT
-                    {
-                        dx = 0,
-                        dy = 0,
-                        mouseData = 0,
-                        dwFlags = MOUSEEVENTF_LEFTUP,
-                        time = 0,
-                        dwExtraInfo = IntPtr.Zero
-                    }
-                }
-            };
-            DispatchInputs(new[] { input });
+            DispatchInputs(new[] { CreateMouseInput(MOUSEEVENTF_LEFTUP) });
         }
 
         public static void RightClick()
         {
-            var downInput = new INPUT
-            {
-                Type = INPUT_MOUSE,
-                U = new InputUnion
-                {
-                    mi = new MOUSEINPUT
-                    {
-                        dx = 0,
-                        dy = 0,
-                        mouseData = 0,
-                        dwFlags = MOUSEEVENTF_RIGHTDOWN,
-                        time = 0,
-                        dwExtraInfo = IntPtr.Zero
-                    }
-                }
-            };
-
-            var upInput = new INPUT
-            {
-                Type = INPUT_MOUSE,
-                U = new InputUnion
-                {
-                    mi = new MOUSEINPUT
-                    {
-                        dx = 0,
-                        dy = 0,
-                        mouseData = 0,
-                        dwFlags = MOUSEEVENTF_RIGHTUP,
-                        time = 0,
-                        dwExtraInfo = IntPtr.Zero
-                    }
-                }
-            };
-
-            DispatchInputs(new[] { downInput, upInput });
+            DispatchInputs(new[] {
+                CreateMouseInput(MOUSEEVENTF_RIGHTDOWN),
+                CreateMouseInput(MOUSEEVENTF_RIGHTUP)
+            });
         }
 
         public static void RightMouseButtonDown()
         {
-            var input = new INPUT
-            {
-                Type = INPUT_MOUSE,
-                U = new InputUnion
-                {
-                    mi = new MOUSEINPUT
-                    {
-                        dx = 0,
-                        dy = 0,
-                        mouseData = 0,
-                        dwFlags = MOUSEEVENTF_RIGHTDOWN,
-                        time = 0,
-                        dwExtraInfo = IntPtr.Zero
-                    }
-                }
-            };
-            DispatchInputs(new[] { input });
+            DispatchInputs(new[] { CreateMouseInput(MOUSEEVENTF_RIGHTDOWN) });
         }
 
         public static void RightMouseButtonUp()
         {
-            var input = new INPUT
-            {
-                Type = INPUT_MOUSE,
-                U = new InputUnion
-                {
-                    mi = new MOUSEINPUT
-                    {
-                        dx = 0,
-                        dy = 0,
-                        mouseData = 0,
-                        dwFlags = MOUSEEVENTF_RIGHTUP,
-                        time = 0,
-                        dwExtraInfo = IntPtr.Zero
-                    }
-                }
-            };
-            DispatchInputs(new[] { input });
+            DispatchInputs(new[] { CreateMouseInput(MOUSEEVENTF_RIGHTUP) });
         }
 
         public static void MiddleClick()
         {
-            var downInput = new INPUT
-            {
-                Type = INPUT_MOUSE,
-                U = new InputUnion
-                {
-                    mi = new MOUSEINPUT
-                    {
-                        dx = 0,
-                        dy = 0,
-                        mouseData = 0,
-                        dwFlags = MOUSEEVENTF_MIDDLEDOWN,
-                        time = 0,
-                        dwExtraInfo = IntPtr.Zero
-                    }
-                }
-            };
-
-            var upInput = new INPUT
-            {
-                Type = INPUT_MOUSE,
-                U = new InputUnion
-                {
-                    mi = new MOUSEINPUT
-                    {
-                        dx = 0,
-                        dy = 0,
-                        mouseData = 0,
-                        dwFlags = MOUSEEVENTF_MIDDLEUP,
-                        time = 0,
-                        dwExtraInfo = IntPtr.Zero
-                    }
-                }
-            };
-
-            DispatchInputs(new[] { downInput, upInput });
+            DispatchInputs(new[] {
+                CreateMouseInput(MOUSEEVENTF_MIDDLEDOWN),
+                CreateMouseInput(MOUSEEVENTF_MIDDLEUP)
+            });
         }
 
         public static void MouseWheel(int delta)
         {
-            var input = new INPUT
-            {
-                Type = INPUT_MOUSE,
-                U = new InputUnion
-                {
-                    mi = new MOUSEINPUT
-                    {
-                        dx = 0,
-                        dy = 0,
-                        mouseData = (uint)delta,
-                        dwFlags = MOUSEEVENTF_WHEEL,
-                        time = 0,
-                        dwExtraInfo = IntPtr.Zero
-                    }
-                }
-            };
-
-            DispatchInputs(new[] { input });
+            DispatchInputs(new[] { CreateMouseInput(MOUSEEVENTF_WHEEL, mouseData: (uint)delta) });
         }
 
         public static void SendKey(byte keyCode, bool keyDown)
@@ -368,6 +200,27 @@ namespace HaloShift
             if (holdMilliseconds > 0)
                 System.Threading.Thread.Sleep(holdMilliseconds);
             SendKey(keyCode, false);
+        }
+
+        public static void SendKeyComboAsync(byte modifierKey, byte mainKey)
+        {
+            System.Threading.Tasks.Task.Run(() =>
+            {
+                try
+                {
+                    SendKey(modifierKey, true);
+                    System.Threading.Thread.Sleep(10);
+                    SendKey(mainKey, true);
+                    System.Threading.Thread.Sleep(50);
+                    SendKey(mainKey, false);
+                    System.Threading.Thread.Sleep(10);
+                    SendKey(modifierKey, false);
+                    System.Threading.Thread.Sleep(10);
+                }
+                catch
+                {
+                }
+            });
         }
 
         public static void GetMousePosition(out int x, out int y)

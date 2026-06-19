@@ -159,15 +159,15 @@ namespace HaloShift
 
         public void HandleInput(Gamepad gamepad)
         {
-            bool up = (gamepad.Buttons & GamepadButtonFlags.DPadUp) != 0;
-            bool down = (gamepad.Buttons & GamepadButtonFlags.DPadDown) != 0;
-            bool left = (gamepad.Buttons & GamepadButtonFlags.DPadLeft) != 0;
-            bool right = (gamepad.Buttons & GamepadButtonFlags.DPadRight) != 0;
-            bool select = (gamepad.Buttons & GamepadButtonFlags.A) != 0;
-            bool cancel = (gamepad.Buttons & GamepadButtonFlags.B) != 0;
-            bool backspace = (gamepad.Buttons & GamepadButtonFlags.X) != 0;
-            bool lb = (gamepad.Buttons & GamepadButtonFlags.LeftShoulder) != 0;
-            bool rb = (gamepad.Buttons & GamepadButtonFlags.RightShoulder) != 0;
+            bool up = gamepad.IsPressed(GamepadButtonFlags.DPadUp);
+            bool down = gamepad.IsPressed(GamepadButtonFlags.DPadDown);
+            bool left = gamepad.IsPressed(GamepadButtonFlags.DPadLeft);
+            bool right = gamepad.IsPressed(GamepadButtonFlags.DPadRight);
+            bool select = gamepad.IsPressed(GamepadButtonFlags.A);
+            bool cancel = gamepad.IsPressed(GamepadButtonFlags.B);
+            bool backspace = gamepad.IsPressed(GamepadButtonFlags.X);
+            bool lb = gamepad.IsPressed(GamepadButtonFlags.LeftShoulder);
+            bool rb = gamepad.IsPressed(GamepadButtonFlags.RightShoulder);
             bool lbRbCombo = lb && rb;
 
             if (_firstInputFrame)
@@ -833,7 +833,7 @@ namespace HaloShift
 
         private void SendVirtualKeyWithModifiers(char character, ModifierState modifiers)
         {
-            short vkCode = VkKeyScan(character);
+            short vkCode = InputSimulator.VkKeyScan(character);
             if (vkCode == -1)
                 return;
 
@@ -907,9 +907,6 @@ namespace HaloShift
         {
             SendVirtualKey(0x08);
         }
-
-        [DllImport("user32.dll")]
-        private static extern short VkKeyScan(char ch);
 
         [DllImport("user32.dll")]
         private static extern IntPtr GetForegroundWindow();
@@ -1108,7 +1105,7 @@ namespace HaloShift
             char current = GetActiveCharacter(symbolLayer);
             if (!char.IsLetter(current))
             {
-                short vk = VkKeyScan(current);
+                short vk = InputSimulator.VkKeyScan(current);
                 return (vk & 0x100) != 0 || shiftActive;
             }
 
@@ -1134,8 +1131,6 @@ namespace HaloShift
             }
         }
 
-        [DllImport("user32.dll")]
-        private static extern short VkKeyScan(char ch);
     }
 
     internal static class VirtualKeyboardWindowDefaultBrushes
