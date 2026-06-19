@@ -21,7 +21,9 @@ namespace HaloShift
                 if (File.Exists(path))
                 {
                     var json = File.ReadAllText(path);
-                    return JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
+                    var settings = JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
+                    settings.Sanitize();
+                    return settings;
                 }
             }
             catch (Exception ex)
@@ -30,6 +32,13 @@ namespace HaloShift
             }
 
             return new AppSettings();
+        }
+
+        private void Sanitize()
+        {
+            if (float.IsNaN(MouseSensitivity) || float.IsInfinity(MouseSensitivity))
+                MouseSensitivity = 0.5f;
+            MouseSensitivity = Math.Clamp(MouseSensitivity, 0.5f, 3.0f);
         }
 
         public void Save()

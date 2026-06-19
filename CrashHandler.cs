@@ -14,8 +14,10 @@ namespace HaloShift
     {
         private const string LOCK_FILE_NAME = "haloshift.lock";
         private const string CRASH_LOG_NAME = "crash.log";
-        private static readonly string LockFilePath = Path.Combine(AppContext.BaseDirectory, LOCK_FILE_NAME);
-        private static readonly string CrashLogPath = Path.Combine(AppContext.BaseDirectory, CRASH_LOG_NAME);
+        private static readonly string DataDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "HaloShift");
+        private static readonly string LockFilePath = Path.Combine(DataDirectory, LOCK_FILE_NAME);
+        private static readonly string CrashLogPath = Path.Combine(DataDirectory, CRASH_LOG_NAME);
         private static Timer? _heartbeatTimer;
         private static readonly object _lockObject = new object();
         private static bool _isShuttingDown = false;
@@ -45,6 +47,8 @@ namespace HaloShift
         /// </summary>
         public static void Initialize()
         {
+            Directory.CreateDirectory(DataDirectory);
+
             // Check if we're recovering from a crash
             CheckForPreviousCrash();
 
@@ -211,9 +215,6 @@ namespace HaloShift
 === CRASH REPORT ===
 Crash Time: {crashTime:yyyy-MM-dd HH:mm:ss}
 Detection Time: {DateTime.Now:yyyy-MM-dd HH:mm:ss}
-System: {Environment.OSVersion}
-.NET Version: {Environment.Version}
-Working Directory: {Environment.CurrentDirectory}
 Process ID: {Process.GetCurrentProcess().Id}
 ===================";
 

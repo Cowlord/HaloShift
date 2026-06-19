@@ -14,6 +14,11 @@ namespace HaloShift
 
         public static void PlayWavFile(string fileName)
         {
+            if (fileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+                return;
+            if (fileName.Contains(".."))
+                return;
+
             var path = Path.Combine(AppContext.BaseDirectory, fileName);
             if (!File.Exists(path))
                 return;
