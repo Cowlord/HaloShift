@@ -25,79 +25,7 @@ namespace HaloShift
 
         private static PlaybackSession? _activeSession;
         private static readonly object _lock = new();
-        private static readonly object _logLock = new();
         private static readonly object _audioCacheLock = new();
-        private static int _startupResolutionLogged;
-
-        public static string GetAudioLogPath()
-            => Path.Combine(AppContext.BaseDirectory, "haloshift-audio.log");
-
-        public static bool OpenAudioLog()
-        {
-            var logPath = GetAudioLogPath();
-
-            try
-            {
-                if (!File.Exists(logPath))
-                {
-                    using var _ = File.Create(logPath);
-                }
-
-                Process.Start(new ProcessStartInfo
-                {
-                    FileName = logPath,
-                    UseShellExecute = true
-                });
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Log("Failed to open audio log file.", ex);
-                return false;
-            }
-        }
-
-        public static void LogStartupSoundResolution(params string[] fileNames)
-        {
-            if (Interlocked.Exchange(ref _startupResolutionLogged, 1) == 1)
-                return;
-
-            if (fileNames == null || fileNames.Length == 0)
-            {
-                Log("Startup sound source diagnostic requested with no file names.");
-                return;
-            }
-
-            foreach (var fileName in fileNames)
-            {
-                if (string.IsNullOrWhiteSpace(fileName))
-                {
-                    Log("Startup sound source: <empty> => invalid filename");
-                    continue;
-                }
-
-                if (fileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 || fileName.Contains(".."))
-                {
-                    Log($"Startup sound source: {fileName} => invalid filename");
-                    continue;
-                }
-
-                if (TryResolveAudioPath(fileName, out var diskPath) && diskPath != null)
-                {
-                    Log($"Startup sound source: {fileName} => disk ({diskPath})");
-                    continue;
-                }
-
-                if (TryCreateEmbeddedAudioFactory(fileName, out _, out var resourceName) &&
-                    !string.IsNullOrWhiteSpace(resourceName))
-                {
-                    Log($"Startup sound source: {fileName} => embedded ({resourceName})");
-                    continue;
-                }
-
-                Log($"Startup sound source: {fileName} => missing");
-            }
-        }
 
         public static void PlayWavFile(string fileName)
         {
@@ -110,7 +38,6 @@ namespace HaloShift
             if (!TryResolveAudioPath(fileName, out var path) &&
                 !TryCreateEmbeddedAudioFactory(fileName, out embeddedAudioFactory, out _))
             {
-                Log($"Audio file not found on disk or embedded resources: {fileName}");
                 return;
             }
 
@@ -128,9 +55,8 @@ namespace HaloShift
             {
                 previousSession?.Cts.Cancel();
             }
-            catch (Exception ex)
+            catch
             {
-                Log("Failed to cancel prior audio session.", ex);
             }
 
             var playbackTask = Task.Run(() =>
@@ -241,13 +167,10 @@ namespace HaloShift
                     source.CopyTo(destination);
 
                     path = targetPath;
-                    Log($"Persisted audio asset: {fileName} => {targetPath}" +
-                        (resourceName != null ? $" (from {resourceName})" : string.Empty));
                     return true;
                 }
-                catch (Exception ex)
+                catch
                 {
-                    Log($"Failed to persist audio asset: {fileName} => {targetPath}", ex);
                     path = null;
                     return false;
                 }
@@ -330,7 +253,6 @@ namespace HaloShift
                 {
                     if (!TryCreatePlayer(out var createdPlayer))
                     {
-                        Log($"No audio output backend available for {Path.GetFileName(path)}.");
                         return;
                     }
 
@@ -353,10 +275,8 @@ namespace HaloShift
 
                     return;
                 }
-                catch (Exception ex)
+                catch
                 {
-                    Log($"Audio playback attempt {attempt} failed for {Path.GetFileName(path)}.", ex);
-
                     if (attempt == maxAttempts || token.IsCancellationRequested)
                         return;
 
@@ -386,7 +306,6 @@ namespace HaloShift
                 {
                     if (!TryCreatePlayer(out var createdPlayer))
                     {
-                        Log($"No audio output backend available for {displayName}.");
                         return;
                     }
 
@@ -410,10 +329,8 @@ namespace HaloShift
 
                     return;
                 }
-                catch (Exception ex)
+                catch
                 {
-                    Log($"Embedded audio playback attempt {attempt} failed for {displayName}.", ex);
-
                     if (attempt == maxAttempts || token.IsCancellationRequested)
                         return;
 
@@ -439,9 +356,8 @@ namespace HaloShift
                 };
                 return true;
             }
-            catch (Exception ex)
+            catch
             {
-                Log("WaveOutEvent initialization failed.", ex);
             }
 
             try
@@ -449,34 +365,12 @@ namespace HaloShift
                 player = new DirectSoundOut();
                 return true;
             }
-            catch (Exception ex)
+            catch
             {
-                Log("DirectSoundOut initialization failed.", ex);
             }
 
             player = null!;
             return false;
-        }
-
-        private static void Log(string message, Exception? exception = null)
-        {
-            try
-            {
-                var logPath = GetAudioLogPath();
-                string line = $"{DateTime.UtcNow:O} [Win32Sound] {message}";
-
-                if (exception != null)
-                    line += $" Exception: {exception.GetType().Name}: {exception.Message}";
-
-                lock (_logLock)
-                {
-                    File.AppendAllText(logPath, line + Environment.NewLine);
-                }
-            }
-            catch
-            {
-                // Never let logging affect app behavior.
-            }
         }
     }
 }

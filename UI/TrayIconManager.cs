@@ -19,7 +19,6 @@ namespace HaloShift
         public event EventHandler? ShowControlsRequested;
         public event EventHandler? ToggleModeRequested;
         public event EventHandler? ShowKeyboardRequested;
-        public event EventHandler? OpenAudioLogRequested;
         public event EventHandler? ExitRequested;
 
         public TrayIconManager()
@@ -45,10 +44,6 @@ namespace HaloShift
             var keyboardItem = new NativeMenuItem("Show Keyboard");
             keyboardItem.Click += (_, __) => ShowKeyboardRequested?.Invoke(this, EventArgs.Empty);
             menu.Items.Add(keyboardItem);
-
-            var openAudioLogItem = new NativeMenuItem("Open Audio Log");
-            openAudioLogItem.Click += (_, __) => OpenAudioLogRequested?.Invoke(this, EventArgs.Empty);
-            menu.Items.Add(openAudioLogItem);
 
             menu.Items.Add(new NativeMenuItemSeparator());
 

@@ -50,10 +50,7 @@ namespace HaloShift
             _trayIconManager.ToggleModeRequested += (_, __) => _modeManager?.SwitchMode(ModeChangeInitiator.UserMenu);
             _trayIconManager.ShowKeyboardRequested += (_, __) =>
                 PostToUi(() => _virtualKeyboard?.ShowKeyboard());
-            _trayIconManager.OpenAudioLogRequested += (_, __) => Win32Sound.OpenAudioLog();
             _trayIconManager.ExitRequested += (_, __) => _desktopLifetime?.Shutdown();
-
-            Win32Sound.LogStartupSoundResolution("sound_activate.wav", "sound_deactivate.wav");
 
             _modeManager.ModeChanged += ModeManager_ModeChanged;
             _modeManager.SensitivityChanged += ModeManager_SensitivityChanged;
