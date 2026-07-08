@@ -1,4 +1,6 @@
 using System;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using SharpDX.XInput;
 
@@ -46,6 +48,7 @@ namespace HaloShift
         private bool _dpadDownWasPressed = false;
         private bool _yButtonWasPressed = false;
         private bool _lbViewComboWasPressed = false;
+        private bool _esoAlternativeToggleWasPressed = false;
 
         private bool _prevWantLeftMouseDown;
         private bool _prevWantRightMouseDown;
@@ -63,11 +66,34 @@ namespace HaloShift
             _mouseSensitivity = Math.Clamp(sensitivity, MIN_SENSITIVITY, MAX_SENSITIVITY);
         }
 
+        /// <summary>
+        /// Checks if eso64.exe is currently running
+        /// </summary>
+        private bool IsEsoRunning()
+        {
+            try
+            {
+                bool isRunning = Process.GetProcessesByName("eso64").Any();
+                System.Diagnostics.Debug.WriteLine($"ESO process check: {isRunning}");
+                return isRunning;
+            }
+            catch
+            {
+                System.Diagnostics.Debug.WriteLine("ESO process check failed");
+                return false;
+            }
+        }
+
         public void Update(Gamepad gamepad)
         {
             bool view = (gamepad.Buttons & GamepadButtonFlags.Back) != 0;
+            bool lb = (gamepad.Buttons & GamepadButtonFlags.LeftShoulder) != 0;
+            bool rb = (gamepad.Buttons & GamepadButtonFlags.RightShoulder) != 0;
+            bool y = (gamepad.Buttons & GamepadButtonFlags.Y) != 0;
+            bool esoRunning = IsEsoRunning();
 
-            if (view)
+            // Only allow View button toggle if ESO is not running
+            if (view && !esoRunning)
             {
                 if (_viewHeldSince == DateTime.MinValue)
                     _viewHeldSince = DateTime.UtcNow;
@@ -85,7 +111,16 @@ namespace HaloShift
                 _toggleFiredThisHold = false;
             }
 
-            bool y = (gamepad.Buttons & GamepadButtonFlags.Y) != 0;
+            // Alternative toggle for ESO: LB + RB + View (works in both modes)
+            bool esoAlternativeToggle = lb && rb && view && !y;
+            if (esoAlternativeToggle && !_esoAlternativeToggleWasPressed && esoRunning)
+            {
+                System.Diagnostics.Debug.WriteLine($"ESO Alternative Toggle triggered - ESO running: {esoRunning}");
+                SwitchMode(ModeChangeInitiator.Gamepad);
+            }
+            _esoAlternativeToggleWasPressed = esoAlternativeToggle;
+
+            // Y button → show keyboard (only in mouse mode)
             if (y && !_yButtonWasPressed && _currentMode == AppMode.Mouse)
             {
                 ShowKeyboardRequested?.Invoke(this, EventArgs.Empty);
@@ -125,6 +160,7 @@ namespace HaloShift
             _dpadDownWasPressed = false;
             _yButtonWasPressed = false;
             _lbViewComboWasPressed = false;
+            _esoAlternativeToggleWasPressed = false;
             _prevWantLeftMouseDown = false;
             _prevWantRightMouseDown = false;
         }
@@ -147,6 +183,7 @@ namespace HaloShift
             _dpadDownWasPressed = true;
             _yButtonWasPressed = true;
             _lbViewComboWasPressed = true;
+            _esoAlternativeToggleWasPressed = true;
         }
 
         public void ReleaseHeldMouseButtons()
