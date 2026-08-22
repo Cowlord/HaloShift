@@ -5,6 +5,7 @@ using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using NAudio.CoreAudioApi;
 using NAudio.Wave;
 
 namespace HaloShift
@@ -347,6 +348,20 @@ namespace HaloShift
 
         private static bool TryCreatePlayer(out IWavePlayer player)
         {
+            // WasapiOut in shared mode routes through the Windows Audio Engine, so playback
+            // still works even when another app (a game, Steam Link, etc.) holds the audio
+            // device in WASAPI exclusive mode. WaveOutEvent/DirectSoundOut are legacy APIs
+            // that get silently blocked in that situation, so they are only used as a
+            // last-resort fallback.
+            try
+            {
+                player = new WasapiOut(AudioClientShareMode.Shared, 100);
+                return true;
+            }
+            catch
+            {
+            }
+
             try
             {
                 player = new WaveOutEvent
