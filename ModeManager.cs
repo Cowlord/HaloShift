@@ -263,28 +263,28 @@ namespace HaloShift
             bool dpadDown = (gamepad.Buttons & GamepadButtonFlags.DPadDown) != 0;
 
             // D-Pad Up → Increase sensitivity
-            if (dpadUp && !_dpadUpWasPressed)
-            {
-                float newSensitivity = Math.Min(_mouseSensitivity + SENSITIVITY_STEP, MAX_SENSITIVITY);
-                if (newSensitivity != _mouseSensitivity)
-                {
-                    _mouseSensitivity = newSensitivity;
-                    RaiseSensitivityChanged(newSensitivity);
-                }
-            }
-            _dpadUpWasPressed = dpadUp;
+            //if (dpadUp && !_dpadUpWasPressed)
+            //{
+            //    float newSensitivity = Math.Min(_mouseSensitivity + SENSITIVITY_STEP, MAX_SENSITIVITY);
+            //    if (newSensitivity != _mouseSensitivity)
+            //    {
+            //        _mouseSensitivity = newSensitivity;
+            //        RaiseSensitivityChanged(newSensitivity);
+            //    }
+            //}
+            //_dpadUpWasPressed = dpadUp;
 
             // D-Pad Down → Decrease sensitivity
-            if (dpadDown && !_dpadDownWasPressed)
-            {
-                float newSensitivity = Math.Max(_mouseSensitivity - SENSITIVITY_STEP, MIN_SENSITIVITY);
-                if (newSensitivity != _mouseSensitivity)
-                {
-                    _mouseSensitivity = newSensitivity;
-                    RaiseSensitivityChanged(newSensitivity);
-                }
-            }
-            _dpadDownWasPressed = dpadDown;
+            //if (dpadDown && !_dpadDownWasPressed)
+            //{
+            //    float newSensitivity = Math.Max(_mouseSensitivity - SENSITIVITY_STEP, MIN_SENSITIVITY);
+            //    if (newSensitivity != _mouseSensitivity)
+            //    {
+            //        _mouseSensitivity = newSensitivity;
+            //        RaiseSensitivityChanged(newSensitivity);
+            //    }
+            //}
+            //_dpadDownWasPressed = dpadDown;
 
             // LT + RT + X → Middle click
             bool middleClickCombo = ltPressed && rtPressed && x;
