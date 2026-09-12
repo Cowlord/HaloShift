@@ -82,6 +82,7 @@ namespace HaloShift
             DataContext = this;
             BuildKeyboardRows();
             InitializeComponent();
+            Opened += (s, e) => this.SetTopmostNoActivate();
             UpdateSelection();
             // Don't call Hide() - IsVisible is already set to False in XAML
 
@@ -118,7 +119,7 @@ namespace HaloShift
             }
 
             IsVisible = true;
-            Activate();
+            this.ReassertTopmost();
 
             var screens = Screens.All;
             var primaryScreen = screens.FirstOrDefault(s => s.IsPrimary) ?? screens.FirstOrDefault();

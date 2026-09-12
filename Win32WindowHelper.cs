@@ -15,6 +15,9 @@ namespace HaloShift
         private const uint SwpNozorder = 0x0004;
         private const uint SwpNoactivate = 0x0010;
         private const uint SwpFramechanged = 0x0020;
+        private const uint SwpShowwindow = 0x0040;
+        private const int WsExNoactivate = 0x08000000;
+        private static readonly IntPtr HwndTopmost = new IntPtr(-1);
 
         public static void ExcludeFromTaskSwitcher(this Window window)
         {
@@ -49,6 +52,49 @@ namespace HaloShift
                 0,
                 0,
                 SwpNomove | SwpNosize | SwpNozorder | SwpNoactivate | SwpFramechanged);
+        }
+
+        public static void SetTopmostNoActivate(this Window window)
+        {
+            if (window.TryGetPlatformHandle() is not { } platformHandle)
+                return;
+
+            var hwnd = platformHandle.Handle;
+            if (hwnd == IntPtr.Zero)
+                return;
+
+            var exStyle = (int)GetWindowLong(hwnd, GwlExstyle);
+            exStyle &= ~WsExAppwindow;
+            exStyle |= WsExToolwindow | WsExNoactivate;
+            SetWindowLong(hwnd, GwlExstyle, (IntPtr)exStyle);
+
+            SetWindowPos(
+                hwnd,
+                HwndTopmost,
+                0,
+                0,
+                0,
+                0,
+                SwpNomove | SwpNosize | SwpNoactivate | SwpFramechanged | SwpShowwindow);
+        }
+
+        public static void ReassertTopmost(this Window window)
+        {
+            if (window.TryGetPlatformHandle() is not { } platformHandle)
+                return;
+
+            var hwnd = platformHandle.Handle;
+            if (hwnd == IntPtr.Zero)
+                return;
+
+            SetWindowPos(
+                hwnd,
+                HwndTopmost,
+                0,
+                0,
+                0,
+                0,
+                SwpNomove | SwpNosize | SwpNoactivate | SwpShowwindow);
         }
 
         private static IntPtr GetWindowLong(IntPtr hWnd, int nIndex)
